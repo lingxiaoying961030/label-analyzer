@@ -1400,8 +1400,8 @@ function renderBarChart(el, labels, data, extraOpts){
       series:[{type:'bar',barWidth:Math.min(50,200/labels.length),itemStyle:{borderRadius:[4,4,0,0]},data,
         label:{show:true,position:'top',color:'#e4e6ed',fontSize:11,fontWeight:600}}]
     });
+    return chart;
   }
-  return chart;
 }
 
 function initDistCharts(field,values,ci){
