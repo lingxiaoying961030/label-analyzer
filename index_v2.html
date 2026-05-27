@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#161923;--s2:#1c1f2e;--sh:rgba(108,92,231,0.06);--border:#282d3e;--bl:#333849;--text:#e4e6ed;--t2:#8b8fa3;--t3:#5a5e72;--accent:#6c5ce7;--al:#a29bfe;--green:#00b894;--red:#e17055;--orange:#fdcb6e;--blue:#74b9ff;--cyan:#00cec9;--R:10px;--r:6px}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+  /* Top bar */
+  .topbar{height:50px;padding:0 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0;background:var(--surface)}
+  .topbar .logo{font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--al),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .topbar .ver{font-size:11px;color:var(--t3);margin-left:-8px}
+
+  .main{flex:1;display:flex;overflow:hidden}
+
+  /* Sidebar */
+  .sidebar{width:330px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0}
+  .sb-scroll{flex:1;overflow-y:auto}
+  .sb-scroll::-webkit-scrollbar{width:4px}
+  .sb-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .sb-foot{padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+
+  /* Upload area */
+  .up-section{padding:16px;border-bottom:1px solid var(--border)}
+  .up-label{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;font-weight:500;margin-bottom:10px}
+  .up-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .up-box{border:1.5px dashed var(--border);border-radius:var(--r);padding:12px 8px;text-align:center;cursor:pointer;transition:.2s;font-size:11px;color:var(--t2)}
+  .up-box.drag-over{border-color:var(--blue);background:rgba(116,185,255,.1);box-shadow:0 0 0 2px rgba(116,185,255,.25)}
+  .up-box:hover{border-color:var(--accent);background:var(--sh)}
+  .up-box.ok{border-color:var(--green);border-style:solid}
+  .up-box .ub-icon{font-size:20px;display:block;margin-bottom:3px}
+  .up-box .ub-name{font-size:10px;color:var(--green);margin-top:5px;font-weight:500;word-break:break-all}
+
+  /* Model mapping panel */
+  .mm-section{border-bottom:1px solid var(--border)}
+  .mm-header{display:flex;align-items:center;gap:8px;padding:10px 16px;cursor:pointer;user-select:none;font-size:12px;color:var(--t2)}
+  .mm-header:hover{background:rgba(255,255,255,.02)}
+  .mm-header .mm-icon{font-size:14px}
+  .mm-header .mm-title{flex:1;font-weight:500}
+  .mm-header .mm-status{font-size:10px;padding:1px 8px;border-radius:10px}
+  .mm-status.off{background:rgba(90,94,114,.15);color:var(--t3)}
+  .mm-status.on{background:rgba(0,184,148,.15);color:var(--green)}
+  .mm-body{padding:0 16px 12px;display:none}
+  .mm-body.show{display:block}
+  .mm-toggle{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .mm-toggle .mm-label{font-size:11px;color:var(--t2);flex:1}
+  .mm-switch{position:relative;width:28px;height:16px;cursor:pointer;flex-shrink:0;flex-grow:0}
+  .mm-switch input{opacity:0;width:0;height:0}
+  .mm-switch .slider{position:absolute;inset:0;background:var(--border);border-radius:8px;transition:.2s}
+  .mm-switch .slider::before{content:'';position:absolute;width:12px;height:12px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:.2s}
+  .mm-switch input:checked+.slider{background:var(--green)}
+  .mm-switch input:checked+.slider::before{transform:translateX(12px)}
+  .mm-models{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .mm-model{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);font-size:11px}
+  .mm-model .mm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .mm-model .mm-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:500}
+  .mm-model .mm-alias{color:var(--t3);font-size:10px;flex-shrink:0}
+  .mm-desc{font-size:10px;color:var(--t3);line-height:1.5;margin-top:8px;padding:6px 8px;background:rgba(108,92,231,.04);border-radius:var(--r);border-left:2px solid var(--accent)}
+  .mm-empty{font-size:10px;color:var(--t3);font-style:italic;padding:4px 0}
+
+  /* Section divider */
+  .sb-divider{padding:8px 16px;font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;font-weight:500;border-bottom:1px solid var(--border);background:rgba(22,25,35,.6);display:flex;align-items:center;gap:6px}
+  .sb-divider .sel-badge{font-size:10px;color:var(--al);background:var(--sh);padding:1px 8px;border-radius:10px;display:none}
+  .sel-btn{font-size:10px;color:var(--t3);cursor:pointer;padding:2px 8px;border-radius:4px;border:1px solid var(--border);transition:.2s;text-transform:none;letter-spacing:0}
+  .sel-btn:hover{color:var(--blue);border-color:var(--blue);background:rgba(116,185,255,.08)}
+
+  /* Accordion items */
+  .acc{border-bottom:1px solid rgba(40,45,62,.5)}
+  .acc-hd{display:flex;align-items:center;gap:8px;padding:10px 16px;cursor:pointer;user-select:none;transition:.12s}
+  .acc-hd:hover{background:rgba(255,255,255,.02)}
+  .acc-chev{font-size:10px;color:var(--t3);transition:transform .2s;width:14px;text-align:center;flex-shrink:0}
+  .acc-chev.open{transform:rotate(90deg)}
+  .acc-icon{font-size:15px;flex-shrink:0}
+  .acc-info{flex:1;min-width:0}
+  .acc-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .acc-meta{font-size:10px;color:var(--t3);margin-top:1px;line-height:1.5;position:relative}
+  .opt-line{display:block;padding-left:2px;color:var(--t3)}
+  .opt-line .ov{color:var(--al);font-weight:500}
+  .acc-badge{font-size:10px;padding:1px 6px;border-radius:3px;font-weight:500;flex-shrink:0}
+  .acc-badge.radio,.acc-badge.checkbox{background:rgba(108,92,231,.12);color:var(--al)}
+  .acc-badge.textarea{background:rgba(0,184,148,.12);color:var(--green)}
+  .acc-badge.depend{background:rgba(116,185,255,.12);color:var(--blue)}
+  .acc-badge.form_list{background:rgba(253,203,110,.12);color:var(--orange)}
+  .acc-badge.text_label{background:rgba(0,206,201,.12);color:var(--cyan)}
+  .acc-badge.other{background:rgba(99,110,114,.12);color:#aaa}
+  .acc-sel{font-size:10px;color:var(--al);background:var(--sh);padding:1px 6px;border-radius:3px;flex-shrink:0}
+  .acc-bd{overflow:hidden;transition:max-height .3s ease}
+  .acc-inner{padding:2px 16px 10px 38px}
+
+  /* Sub-field items */
+  .si{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:.1s;margin-bottom:1px}
+  .si:hover{background:rgba(255,255,255,.025)}
+  .si.on{background:var(--sh)}
+  .ck{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--bl);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;transition:.12s}
+  .ck.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .si-info{flex:1;min-width:0}
+  .si-name{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .si-meta{font-size:10px;color:var(--t3);margin-top:1px;line-height:1.5}
+
+  /* Bottom button */
+  .btn-a{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s}
+  .btn-a:hover{background:#5b4bd5;transform:translateY(-1px)}
+  .btn-a:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .foot-info{text-align:center;font-size:11px;color:var(--t2);margin-top:6px}
+
+  /* Right content */
+  .content{flex:1;overflow-y:auto;padding:24px;background:var(--bg)}
+  .tab-bar{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border)}
+  .tab{padding:8px 20px;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+  .sum-card{background:var(--surface);border-radius:var(--R);border:1px solid var(--border);margin-bottom:20px;overflow:visible}
+  .sum-card-h{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .sum-card-h h3{font-size:15px;font-weight:600}
+  .sum-chart{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);height:380px;margin-top:16px}
+  .model-name{font-weight:600;color:var(--text);max-width:200px;word-break:break-all;font-size:11px}
+  .content::-webkit-scrollbar{width:6px}
+  .content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+  /* Empty state */
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:14px}
+  .empty .ei{font-size:56px;opacity:.2}
+  .empty .et{font-size:15px;color:var(--t2)}
+  .empty .es{font-size:12px;max-width:260px;text-align:center;line-height:1.6}
+
+  /* Progress bar */
+  .progress-wrap{margin-top:8px;display:none}
+  .progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s;width:0%}
+  .progress-text{font-size:10px;color:var(--t3);margin-top:3px;text-align:center}
+
+  /* Config info */
+  .cfg-info{margin-top:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);font-size:11px;color:var(--t2);display:none}
+  .cfg-info .ci-name{color:var(--text);font-weight:600;margin-bottom:2px}
+  .cfg-info .ci-meta{color:var(--t3);font-size:10px}
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s}
+  .toast.show{opacity:1}
+  .toast.error{background:#e17055;color:#fff}
+  .toast.warn{background:#fdcb6e;color:#2d3436}
+  .toast.success{background:#00b894;color:#fff}
+  .match-warn{margin-top:8px;padding:8px 10px;background:rgba(225,112,85,.1);border:1px solid rgba(225,112,85,.3);border-radius:var(--r);font-size:11px;color:#e17055;display:none}
+
+  /* No fields placeholder */
+  .no-fields{padding:24px 16px;text-align:center;color:var(--t3);font-size:12px}
+
+  /* Result cards */
+  .rc{background:var(--surface);border-radius:var(--R);border:1px solid var(--border);margin-bottom:16px;overflow:visible}
+  .rc-h{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .rc-h h3{font-size:15px;font-weight:600;flex:1}
+  .rc-h .tag{font-size:10px;padding:2px 7px;border-radius:3px}
+  .rc-b{padding:16px 20px}
+  .sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+  .sb{background:var(--bg);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--border)}
+  .sv{font-size:22px;font-weight:700;line-height:1.2}
+  .sl{font-size:10px;color:var(--t2);margin-top:2px}
+  .ss{font-size:9px;color:var(--t3);margin-top:1px}
+  .cr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .cb{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);height:280px}
+  .ft{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}
+  .ft th{text-align:left;padding:6px 10px;color:var(--t2);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+  .ft td{padding:6px 10px;border-bottom:1px solid rgba(40,45,62,.4)}
+  .ft tr:hover td{background:rgba(108,92,231,.02)}
+  .ts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+  .tl{font-size:11px;color:var(--t2);margin-bottom:4px}
+  .tv{font-size:20px;font-weight:700}
+  .res-header{font-size:13px;color:var(--t2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .res-header::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px}
+  .mapped-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,184,148,.1);color:var(--green);margin-left:6px}
+  .mapped-tag::before{content:'🔄';font-size:9px}
+  .section-title{font-size:12px;color:var(--t2);margin:14px 0 8px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .section-title::before{content:'';width:2px;height:10px;background:var(--blue);border-radius:1px}
+  .no-data-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--R);padding:20px;text-align:center;color:var(--t3);font-size:12px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">Label Analyzer</span>
+  <span class="ver">v1.0</span>
+</div>
+<div class="main">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-scroll">
+      <!-- Upload -->
+      <div class="up-section">
+        <div class="up-label">数据上传</div>
+        <div class="up-grid">
+          <div class="up-box" id="upConfig" onclick="document.getElementById('fileConfig').click()">
+            <span class="ub-icon">⚙️</span>Config 文件
+            <div class="ub-name" id="cfgFileName"></div>
+          </div>
+          <div class="up-box" id="upData" onclick="document.getElementById('fileData').click()">
+            <span class="ub-icon">📊</span>JSONL 数据
+            <div class="ub-name" id="dataFileName"></div>
+          </div>
+        </div>
+        <input type="file" id="fileConfig" accept=".json" style="display:none" onchange="onConfigUpload(this)">
+        <input type="file" id="fileData" accept=".jsonl,.json" multiple style="display:none" onchange="onDataUpload(this)">
+        <div class="cfg-info" id="cfgInfo">
+          <div class="ci-name" id="cfgInfoName"></div>
+          <div class="ci-meta" id="cfgInfoMeta"></div>
+        </div>
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text" id="progressText"></div>
+        </div>
+        <div class="match-warn" id="matchWarn"></div>
+      </div>
+
+      <!-- Model mapping -->
+      <div class="mm-section" id="mmSection" style="display:none">
+        <div class="mm-header" onclick="toggleMM()">
+          <span class="mm-icon">🔄</span>
+          <span class="mm-title">Model 映射</span>
+          <span class="mm-status off" id="mmStatusBadge">未启用</span>
+        </div>
+        <div class="mm-body" id="mmBody">
+          <div class="mm-toggle">
+            <span class="mm-label">启用映射</span>
+            <label class="mm-switch"><input type="checkbox" id="mmSwitch" onchange="toggleMapping(this.checked)"><span class="slider"></span></label>
+          </div>
+          <div class="mm-models" id="mmModels">
+            <div class="mm-empty">上传 JSONL 数据后自动检测 Model</div>
+          </div>
+          <div class="mm-desc">将「回复1/回复2/...」按每条数据的 responses 顺序映射到真实 model 名称统计，支持 2 个及以上 model。</div>
+        </div>
+      </div>
+
+      <!-- Field selector -->
+      <div class="sb-divider">
+        <span>选择分析字段</span>
+        <span class="sel-badge" id="selBadge"></span>
+        <span style="flex:1"></span>
+        <span class="sel-btn" onclick="selectAll()">全选</span>
+        <span class="sel-btn" onclick="selectInverse()">反选</span>
+      </div>
+      <div id="fieldList">
+        <div class="no-fields">请先上传 Config 文件</div>
+      </div>
+    </div>
+    <div class="sb-foot">
+      <button class="btn-a" id="btnA" onclick="run()" disabled>🚀 开始分析</button>
+      <div class="foot-info" id="footInfo">请上传文件</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="contentArea">
+    <div class="tab-bar" id="tabBar" style="display:none">
+      <div class="tab active" data-tab="field" onclick="switchTab('field')">📊 字段分析</div>
+      <div class="tab" data-tab="summary" onclick="switchTab('summary')">🏆 模型汇总</div>
+    </div>
+    <div class="empty" id="emptyS">
+      <div class="ei">📊</div>
+      <div class="et">上传数据开始分析</div>
+      <div class="es">在左侧上传 Config 和 JSONL 数据文件，选择要分析的字段，点击"开始分析"</div>
+    </div>
+    <div id="fieldPanel">
+      <div id="results" style="display:none"></div>
+    </div>
+    <div id="summaryPanel" style="display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+// ===== TYPE HELPERS =====
+const TI={radio:'🔘',checkbox:'☑️',textarea:'📝',textarea_auto_height:'📝',depend:'🔗',form_list:'📋',text_label:'🏷️',text:'📝',screenshot:'📎',editable_link:'🔗',responses_ranking:'📊',draggable_md_editor:'📝',tag:'🏷️',image_annotation:'🖼️',image_annotation_v3:'🖼️'};
+const TL={radio:'单选',checkbox:'多选',textarea:'文本框',textarea_auto_height:'文本框',depend:'组合控件',form_list:'表单列表',text_label:'文本标注',text:'文本',screenshot:'截图上传',editable_link:'可编辑链接',responses_ranking:'排序控件',draggable_md_editor:'MD编辑器',tag:'标签',image_annotation:'拉框标注',image_annotation_v3:'拉框标注V3'};
+const TC=v=>{if(['radio','checkbox'].includes(v))return'radio';if(v.startsWith('textarea')||v==='text'||v==='draggable_md_editor')return'textarea';if(v==='depend')return'depend';if(v==='form_list')return'form_list';if(v==='text_label'||v==='tag')return'text_label';return'other'};
+
+// ===== STATE =====
+let parsedFields=[];     // [{dataIndex,title,valueType,options,subFields:[{dataIndex,title,valueType,options,dependency}]}]
+let parsedData=[];       // [{id, labels:[...], responses:[...]}]
+let dataFiles=[];        // [{name, count}]
+let detectedModels=[];   // model names from responses
+let configName='';
+let openP=new Set();
+let sel=new Set();
+let mappingEnabled=false;
+let mmPanelOpen=false;
+let charts=[];
+
+// ===== CONFIG PARSER =====
+function parseConfig(json){
+  const cd=json.config_data||[];
+  const fields=[];
+
+  cd.forEach(item=>{
+    const field={
+      dataIndex: item.dataIndex,
+      title: item.title||item.dataIndex,
+      valueType: item.valueType,
+      options: item.options||item.fieldProps?.options||(item.formItemProps?.options)||null,
+      subFields: []
+    };
+
+    // Extract visibleRule if present
+    const allCols=item.columns||[];
+
+    if(['depend','form_list'].includes(item.valueType)){
+      // Sub-fields are in columns[0].columns (skip visibleRule column group)
+      const subCols=extractSubColumns(allCols);
+      subCols.forEach(sc=>{
+        if(sc.dataIndex==='visibleRule')return;
+        const sf={
+          dataIndex: sc.dataIndex,
+          title: sc.title||sc.dataIndex,
+          valueType: sc.valueType||'unknown',
+          options: sc.options||sc.fieldProps?.options||null,
+          dependency: buildDependencyText(sc.dependency, sc.dependencyType)
+        };
+        field.subFields.push(sf);
+      });
+    } else if(item.valueType==='text_label'){
+      // text_label sub-tags are in nested columns
+      const subCols=extractSubColumns(allCols, true);
+      subCols.forEach(sc=>{
+        if(sc.dataIndex==='visibleRule')return;
+        const sf={
+          dataIndex: sc.dataIndex,
+          title: sc.title||sc.dataIndex,
+          valueType: sc.valueType||'tag',
+          options: null,
+          dependency: null
+        };
+        field.subFields.push(sf);
+      });
+    }
+
+    // Get options from fieldProps if not at top level
+    if(!field.options && item.fieldProps?.options){
+      field.options=item.fieldProps.options;
+    }
+
+    fields.push(field);
+  });
+
+  return fields;
+}
+
+function extractSubColumns(columns, isTextLabel){
+  // columns is an array; dig into nested columns[0].columns pattern
+  // Skip the visibleRule group
+  const result=[];
+  for(const col of columns){
+    if(col.dataIndex==='visibleRule')continue;
+    if(col.dataIndex && col.valueType){
+      // Direct sub-field
+      result.push(col);
+    } else if(col.dataIndex && !col.valueType && isTextLabel){
+      // text_label sub-tag: has dataIndex but no valueType
+      result.push({...col, valueType:'tag'});
+    } else if(col.columns){
+      // Nested group — recurse
+      for(const inner of col.columns){
+        if(inner.dataIndex==='visibleRule')continue;
+        if(inner.dataIndex && inner.valueType){
+          result.push(inner);
+        } else if(inner.dataIndex && !inner.valueType && isTextLabel){
+          result.push({...inner, valueType:'tag'});
+        } else if(inner.columns){
+          // One more level (e.g. visibleRule wrapper)
+          for(const deep of inner.columns){
+            if(deep.dataIndex==='visibleRule')continue;
+            if(deep.dataIndex){
+              result.push(deep);
+            }
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
+function buildDependencyText(deps, depType){
+  if(!deps||!deps.length)return null;
+  const parts=deps.map(d=>{
+    const op=d.operator==='eq'?'=':d.operator==='neq'?'≠':d.operator;
+    return `当「${d.dataIndex}」${op}「${d.value}」时`;
+  });
+  const join=depType==='or'?' 或 ':' 且 ';
+  return parts.join(join)+'显示';
+}
+
+// ===== JSONL PARSER =====
+function parseJSONL(text, fileName){
+  const lines=text.split('\n').filter(l=>l.trim());
+  const records=[];
+  for(const line of lines){
+    try{
+      records.push(JSON.parse(line));
+    }catch(e){/* skip bad lines */}
+  }
+  return records;
+}
+
+// ===== TOAST =====
+function showToast(msg,type='error',duration=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast '+type;
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),duration);
+}
+
+// ===== FILE UPLOAD HANDLERS =====
+function onConfigUpload(input){
+  const file=input.files[0];
+  if(!file)return;
+
+  // 3a: Format validation
+  if(!file.name.endsWith('.json')){
+    showToast('⚠️ 请上传 JSON 格式的 Config 文件（.json）','error');
+    input.value='';return;
+  }
+
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      if(!json.config_data||!Array.isArray(json.config_data)){
+        showToast('⚠️ Config 文件缺少 config_data 字段，请确认文件格式','error');
+        return;
+      }
+      configName=json.name||file.name;
+      parsedFields=parseConfig(json);
+
+      // Update UI
+      document.getElementById('upConfig').classList.add('ok');
+      document.getElementById('cfgFileName').textContent='✓ '+file.name;
+      document.getElementById('cfgInfo').style.display='';
+      document.getElementById('cfgInfoName').textContent=configName;
+      document.getElementById('cfgInfoMeta').textContent=parsedFields.length+'个顶层字段';
+
+      // Reset state
+      openP.clear();
+      if(parsedFields.length)openP.add(0);
+      sel.clear();
+
+      // Show mapping section
+      document.getElementById('mmSection').style.display='';
+
+      renderFields();
+      checkFieldMatch();
+      updateFooter();
+    }catch(err){
+      alert('Config 解析失败：'+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function onDataUpload(input){
+  const files=Array.from(input.files);
+  if(!files.length)return;
+
+  // 3a: Format validation
+  const badFiles=files.filter(f=>!f.name.endsWith('.jsonl')&&!f.name.endsWith('.json'));
+  if(badFiles.length){
+    showToast(`⚠️ 请上传 JSONL 格式的数据文件：${badFiles.map(f=>f.name).join(', ')}`,'error',4000);
+    input.value='';return;
+  }
+
+  // Hide previous match warning
+  document.getElementById('matchWarn').style.display='none';
+
+  parsedData=[];
+  dataFiles=[];
+  detectedModels=[];
+  const modelSet=new Set();
+
+  let loaded=0;
+  const total=files.length;
+
+  // Show progress
+  const pw=document.getElementById('progressWrap');
+  const pf=document.getElementById('progressFill');
+  const pt=document.getElementById('progressText');
+  pw.style.display='';
+  pf.style.width='0%';
+  pt.textContent=`解析中... 0/${total}`;
+
+  files.forEach((file,fi)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const records=parseJSONL(e.target.result, file.name);
+      dataFiles.push({name:file.name, count:records.length, startIdx:parsedData.length});
+
+      // Detect models from responses
+      records.forEach(r=>{
+        const resps=r.responses||[];
+        resps.forEach(resp=>{
+          if(resp.model)modelSet.add(resp.model);
+        });
+      });
+
+      parsedData.push(...records);
+      loaded++;
+
+      // Update progress
+      pf.style.width=(loaded/total*100)+'%';
+      pt.textContent=`解析中... ${loaded}/${total}`;
+
+      if(loaded===total){
+        // Done
+        setTimeout(()=>{pw.style.display='none'},800);
+        detectedModels=[...modelSet];
+
+        // Update UI
+        document.getElementById('upData').classList.add('ok');
+        const totalRecords=parsedData.length;
+        const fileText=dataFiles.length===1
+          ? `✓ ${dataFiles[0].name} · ${totalRecords.toLocaleString()}条`
+          : `✓ ${dataFiles.length}文件 · ${totalRecords.toLocaleString()}条`;
+        document.getElementById('dataFileName').textContent=fileText;
+
+        updateMM();
+        checkFieldMatch();
+        updateFooter();
+      }
+    };
+    reader.readAsText(file);
+  });
+}
+
+// ===== MODEL MAPPING =====
+function updateMM(){
+  document.getElementById('mmSwitch').checked=mappingEnabled;
+  document.getElementById('mmBody').className='mm-body'+(mmPanelOpen?' show':'');
+  const badge=document.getElementById('mmStatusBadge');
+  if(mappingEnabled){badge.textContent='已启用';badge.className='mm-status on'}
+  else{badge.textContent='未启用';badge.className='mm-status off'}
+
+  const ml=document.getElementById('mmModels');
+  if(detectedModels.length===0){
+    ml.innerHTML='<div class="mm-empty">上传 JSONL 数据后自动检测 Model</div>';
+    return;
+  }
+  const colors=['#74b9ff','#fdcb6e','#a29bfe','#00cec9','#e17055','#00b894'];
+  ml.innerHTML=detectedModels.map((m,i)=>`<div class="mm-model"><span class="mm-dot" style="background:${colors[i%colors.length]}"></span><span class="mm-name" title="${m}">${m}</span><span class="mm-alias">= 回复${i+1}</span></div>`).join('');
+}
+
+function toggleMM(){
+  mmPanelOpen=!mmPanelOpen;
+  document.getElementById('mmBody').className='mm-body'+(mmPanelOpen?' show':'');
+}
+
+function toggleMapping(v){
+  mappingEnabled=v;
+  const badge=document.getElementById('mmStatusBadge');
+  if(v){badge.textContent='已启用';badge.className='mm-status on'}
+  else{badge.textContent='未启用';badge.className='mm-status off'}
+}
+
+// ===== RENDER SIDEBAR FIELDS =====
+function renderFields(){
+  const el=document.getElementById('fieldList');
+  if(!parsedFields.length){
+    el.innerHTML='<div class="no-fields">请先上传 Config 文件</div>';
+    return;
+  }
+
+  let h='';
+  let totalSel=0;
+
+  parsedFields.forEach((f,fi)=>{
+    const hasSub=f.subFields&&f.subFields.length>0;
+    const isOpen=openP.has(fi);
+    let selCnt=0;
+    if(hasSub){f.subFields.forEach((_,si)=>{if(sel.has(`${fi}.${si}`))selCnt++})}
+    else{if(sel.has(`${fi}`))selCnt=1}
+    totalSel+=selCnt;
+
+    h+=`<div class="acc">`;
+    h+=`<div class="acc-hd" onclick="${hasSub?`tp(${fi})`:`tl(${fi})`}">`;
+
+    if(hasSub){
+      h+=`<span class="acc-chev ${isOpen?'open':''}">▶</span>`;
+    }else{
+      const ck=sel.has(`${fi}`);
+      h+=`<span class="ck ${ck?'on':''}">${ck?'✓':''}</span>`;
+    }
+
+    h+=`<span class="acc-icon">${TI[f.valueType]||'📄'}</span>`;
+    h+=`<div class="acc-info"><div class="acc-title">${f.title}</div>`;
+    h+=`<div class="acc-meta">${TL[f.valueType]||f.valueType}`;
+    if(hasSub)h+=` · ${f.subFields.length}个子字段`;
+    else if(f.options&&f.options.length){
+      h+=f.options.map(o=>`<span class="opt-line"><span class="ov">${o.value}</span> = ${o.label}</span>`).join('');
+    }
+    h+=`</div></div>`;
+    h+=`<span class="acc-badge ${TC(f.valueType)}">${TL[f.valueType]||f.valueType}</span>`;
+    if(selCnt>0)h+=`<span class="acc-sel">${selCnt}✓</span>`;
+    h+=`</div>`;
+
+    if(hasSub){
+      h+=`<div class="acc-bd" data-panel="${fi}"><div class="acc-inner">`;
+      f.subFields.forEach((sf,si)=>{
+        const k=`${fi}.${si}`;const ck=sel.has(k);
+        let meta=TL[sf.valueType]||sf.valueType;
+        if(sf.dependency){
+          meta+=` · ${sf.dependency}`;
+        }
+        if(sf.options&&sf.options.length){
+          meta+=sf.options.map(o=>`<span class="opt-line"><span class="ov">${o.value}</span> = ${o.label}</span>`).join('');
+        }
+        h+=`<div class="si${ck?' on':''}" onclick="event.stopPropagation();ts('${k}')">`;
+        h+=`<span class="ck ${ck?'on':''}">${ck?'✓':''}</span>`;
+        h+=`<div class="si-info"><div class="si-name">${sf.title}</div><div class="si-meta">${meta}</div></div></div>`;
+      });
+      h+=`</div></div>`;
+    }
+    h+=`</div>`;
+  });
+
+  el.innerHTML=h;
+
+  // Set actual max-height from rendered DOM
+  document.querySelectorAll('.acc-bd[data-panel]').forEach(bd=>{
+    const fi=parseInt(bd.dataset.panel);
+    bd.style.maxHeight=openP.has(fi)?bd.scrollHeight+'px':'0px';
+  });
+
+  // Update badge
+  const badge=document.getElementById('selBadge');
+  if(totalSel>0){badge.style.display='inline';badge.textContent=`${totalSel} 已选`}
+  else{badge.style.display='none'}
+}
+
+function updateFooter(){
+  let totalSel=0;
+  parsedFields.forEach((f,fi)=>{
+    if(f.subFields&&f.subFields.length){
+      f.subFields.forEach((_,si)=>{if(sel.has(`${fi}.${si}`))totalSel++});
+    }else{
+      if(sel.has(`${fi}`))totalSel++;
+    }
+  });
+
+  const hasConfig=parsedFields.length>0;
+  const hasData=parsedData.length>0;
+  const btn=document.getElementById('btnA');
+  const info=document.getElementById('footInfo');
+
+  if(!hasConfig){
+    btn.disabled=true;
+    info.textContent='请上传 Config 文件';
+  }else if(!hasData){
+    btn.disabled=true;
+    info.textContent='请上传 JSONL 数据';
+  }else if(totalSel===0){
+    btn.disabled=true;
+    info.textContent='请选择分析字段';
+  }else{
+    btn.disabled=false;
+    info.textContent=`已选 ${totalSel} 个字段 · ${parsedData.length.toLocaleString()} 条数据`;
+  }
+}
+
+function tp(fi){openP.has(fi)?openP.delete(fi):openP.add(fi);renderFields();updateFooter()}
+function tl(fi){const k=`${fi}`;sel.has(k)?sel.delete(k):sel.add(k);renderFields();updateFooter()}
+function ts(k){sel.has(k)?sel.delete(k):sel.add(k);renderFields();updateFooter()}
+
+function selectAll(){
+  parsedFields.forEach((f,fi)=>{
+    if(f.subFields&&f.subFields.length){
+      openP.add(fi);
+      f.subFields.forEach((_,si)=>sel.add(`${fi}.${si}`));
+    }else{
+      sel.add(`${fi}`);
+    }
+  });
+  renderFields();updateFooter();
+}
+
+function selectInverse(){
+  parsedFields.forEach((f,fi)=>{
+    if(f.subFields&&f.subFields.length){
+      f.subFields.forEach((_,si)=>{
+        const k=`${fi}.${si}`;
+        sel.has(k)?sel.delete(k):sel.add(k);
+      });
+    }else{
+      const k=`${fi}`;
+      sel.has(k)?sel.delete(k):sel.add(k);
+    }
+  });
+  renderFields();updateFooter();
+}
+
+// ===== ANALYSIS ENGINE =====
+
+// Resolve field info from selection key
+function getFieldByKey(key){
+  const[fi,si]=key.split('.').map(Number);
+  const f=parsedFields[fi];
+  if(isNaN(si))return{field:f,sub:null,parentDataIndex:null};
+  return{field:f.subFields[si],sub:si,parentDataIndex:f.dataIndex};
+}
+
+// Extract values for a field from all data
+function extractValues(fieldDef, parentDataIndex){
+  const values=[];// {value, fileIdx, responseOrder}
+  parsedData.forEach((record,ri)=>{
+    // Determine which file this record belongs to
+    let fileIdx=0;
+    for(let i=0;i<dataFiles.length;i++){
+      if(ri>=dataFiles[i].startIdx)fileIdx=i;
+    }
+    // Response order for this record (for model mapping)
+    const responseOrder=(record.responses||[]).map(r=>r.model);
+
+    // Iterate labels
+    const labels=record.labels||[];
+    labels.forEach(label=>{
+      const result=label.result;
+      if(!result||typeof result!=='object')return;
+
+      let val;
+      if(parentDataIndex){
+        // Sub-field of depend/form_list/text_label
+        const parent=result[parentDataIndex];
+        if(!parent||typeof parent!=='object')return;
+
+        // text_label: parent is array of tag objects [{tagId, tagName, ranges, fieldValues}]
+        if(Array.isArray(parent)&&parent.length>0&&parent[0]?.tagId!==undefined){
+          // Count how many annotations use this tag
+          const tagItems=parent.filter(t=>t.tagId===fieldDef.dataIndex||t.tagName===fieldDef.dataIndex);
+          if(tagItems.length>0){
+            // Value = number of annotations with this tag (for counting)
+            // Also include fieldValues for sub-field analysis
+            values.push({value:tagItems,fileIdx,responseOrder,isTextLabel:true});
+          }
+          return;
+        }
+
+        if(Array.isArray(parent)){
+          // form_list: array of objects
+          parent.forEach(item=>{
+            const v=item[fieldDef.dataIndex];
+            if(v!==undefined&&v!==null&&v!=='')
+              values.push({value:v,fileIdx,responseOrder});
+          });
+          return;
+        }
+        val=parent[fieldDef.dataIndex];
+      }else{
+        val=result[fieldDef.dataIndex];
+      }
+
+      if(val!==undefined&&val!==null&&val!==''){
+        // Skip empty arrays (checkbox with no selection)
+        if(Array.isArray(val)&&val.length===0)return;
+        values.push({value:val,fileIdx,responseOrder});
+      }
+    });
+  });
+  return values;
+}
+
+// Determine analysis type
+function getAnalysisType(fieldDef){
+  const vt=fieldDef.valueType;
+  if(['radio','checkbox'].includes(vt))return'distributable';
+  if(vt&&(vt.startsWith('textarea')||vt==='text'||vt==='draggable_md_editor'))return'text';
+  if(vt==='text_label'||vt==='tag')return'text_label';
+  if(vt==='responses_ranking')return'ranking';
+  if(vt&&vt.startsWith('image_annotation'))return'img_anno';
+  return'other';
+}
+
+// ===== RUN =====
+function run(){
+  if(!sel.size||!parsedData.length)return;
+  charts.forEach(c=>c.dispose());charts=[];
+
+  showTabBar();
+  switchTab('field');
+
+  const c=document.getElementById('results');
+  c.innerHTML='';c.style.display='';
+  document.getElementById('emptyS').style.display='none';
+
+  c.innerHTML=`<div class="res-header">分析结果 · ${sel.size} 个字段 · ${configName} · ${parsedData.length.toLocaleString()} 条数据</div>`;
+
+  let ci=0;
+  [...sel].sort().forEach(key=>{
+    const{field,sub,parentDataIndex}=getFieldByKey(key);
+    const values=extractValues(field,parentDataIndex);
+    const atype=getAnalysisType(field);
+    const titlePrefix=parentDataIndex?parsedFields.find(f=>f.dataIndex===parentDataIndex)?.title+' › ':'';
+    const title=titlePrefix+field.title;
+
+    if(atype==='distributable'){
+      c.innerHTML+=renderDistResult(field,title,values,ci);
+      ci++;
+    }else if(atype==='text'){
+      c.innerHTML+=renderTextResult(field,title,values);
+    }else if(atype==='img_anno'){
+      c.innerHTML+=renderImgAnnoResult(field,title,values,ci);
+      ci++;
+    }else if(atype==='ranking'){
+      c.innerHTML+=renderRankingResult(field,title,values,ci);
+      ci++;
+    }else if(atype==='text_label'){
+      c.innerHTML+=renderTextLabelResult(field,title,values,ci);
+      ci++;
+    }else{
+      c.innerHTML+=renderOtherResult(field,title,values);
+    }
+  });
+
+  // Init charts after DOM update
+  setTimeout(()=>{
+    ci=0;
+    [...sel].sort().forEach(key=>{
+      const{field,sub,parentDataIndex}=getFieldByKey(key);
+      const values=extractValues(field,parentDataIndex);
+      const atype=getAnalysisType(field);
+      if(atype==='distributable'){
+        initDistCharts(field,values,ci);ci++;
+      }else if(atype==='img_anno'){
+        initImgAnnoCharts(values,ci);ci++;
+      }else if(atype==='ranking'){
+        initRankingCharts(values,ci);ci++;
+      }else if(atype==='text_label'){
+        initTextLabelCharts(field,values,ci);ci++;
+      }
+    });
+  },80);
+}
+
+// ===== DISTRIBUTABLE (radio/checkbox) RESULT =====
+function renderDistResult(field,title,values,ci){
+  const opts=field.options||[];
+  if(!values.length)return`<div class="no-data-card">📭 ${title}：无有效数据</div>`;
+
+  // Count distribution
+  const counts={};
+  opts.forEach(o=>counts[o.value]=0);
+  let unknownCount=0;
+  const fileCounts={};// fileIdx -> {optValue -> count}
+  dataFiles.forEach((_,i)=>{fileCounts[i]={};opts.forEach(o=>fileCounts[i][o.value]=0);fileCounts[i]._total=0});
+
+  values.forEach(v=>{
+    const val=v.value;
+    // Handle checkbox (array of values) — count each selected option
+    if(Array.isArray(val)){
+      val.forEach(item=>{
+        if(item in counts){
+          counts[item]++;
+          if(fileCounts[v.fileIdx]){fileCounts[v.fileIdx][item]++;fileCounts[v.fileIdx]._total++}
+        }else{
+          unknownCount++;
+        }
+      });
+    }else if(val in counts){
+      counts[val]++;
+      if(fileCounts[v.fileIdx]){fileCounts[v.fileIdx][val]++;fileCounts[v.fileIdx]._total++}
+    }else{
+      unknownCount++;
+    }
+  });
+
+  const total=values.length;
+  const dist=opts.map(o=>({label:o.label,value:o.value,count:counts[o.value],pct:(counts[o.value]/total*100).toFixed(1)}));
+  const colors=['var(--green)','var(--red)','var(--orange)','var(--al)','var(--blue)','var(--cyan)'];
+
+  // Check if mapping applies
+  const shouldMap=mappingEnabled&&detectedModels.length>0&&isPositionalField(field);
+  const tagHtml=shouldMap?'<span class="mapped-tag">Model 映射</span>':'';
+
+  let html=`<div class="rc"><div class="rc-h"><h3>${title}</h3>${tagHtml}<span class="tag" style="background:rgba(108,92,231,.12);color:var(--al)">${TL[field.valueType]||field.valueType}</span></div><div class="rc-b">`;
+
+  if(shouldMap){
+    // Mapped distribution
+    const mappedDist=dist.map(d=>({...d,mappedLabel:mapLabel(d.label)}));
+    html+=`<div class="section-title">按真实 Model 统计</div>`;
+    html+=`<div class="sr">${mappedDist.map((d,i)=>`<div class="sb"><div class="sv" style="color:${colors[i%colors.length]}">${d.pct}%</div><div class="sl" style="font-weight:600">${d.mappedLabel}</div><div class="ss">${d.count.toLocaleString()} 条</div><div class="ss" style="color:var(--t3);font-style:italic">原: ${d.label}</div></div>`).join('')}
+    <div class="sb"><div class="sv">${total.toLocaleString()}</div><div class="sl">总计</div></div></div>`;
+    html+=`<div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div>`;
+  }else{
+    // Normal distribution
+    html+=`<div class="sr">${dist.map((d,i)=>`<div class="sb"><div class="sv" style="color:${colors[i%colors.length]}">${d.pct}%</div><div class="sl">${d.label}</div><div class="ss">${d.count.toLocaleString()} 条</div></div>`).join('')}
+    <div class="sb"><div class="sv">${total.toLocaleString()}</div><div class="sl">总计</div></div></div>`;
+    html+=`<div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div>`;
+  }
+
+  // Unknown values
+  if(unknownCount>0){
+    html+=`<div style="font-size:11px;color:var(--orange);margin-bottom:8px">⚠️ ${unknownCount} 条数据的值不在选项列表中</div>`;
+  }
+
+  // File comparison table (if multiple files)
+  if(dataFiles.length>1){
+    const dispLabels=shouldMap?dist.map(d=>mapLabel(d.label)):dist.map(d=>d.label);
+    html+=`<table class="ft"><thead><tr><th>文件</th><th>条数</th>${dispLabels.map(l=>`<th>${l}</th>`).join('')}</tr></thead><tbody>`;
+    dataFiles.forEach((df,fi)=>{
+      const ft=fileCounts[fi]._total||1;
+      html+=`<tr><td>${df.name}</td><td>${ft}</td>`;
+      dist.forEach(d=>{
+        const fc=fileCounts[fi][d.value]||0;
+        html+=`<td>${(fc/ft*100).toFixed(1)}%</td>`;
+      });
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table>`;
+  }
+
+  html+=`</div></div>`;
+  return html;
+}
+
+function isPositionalField(f){
+  if(!f.options)return false;
+  return f.options.some(o=>/res_1|res_2|res_3|回复1|回复2|回复3/i.test(o.label));
+}
+
+function mapLabel(label){
+  if(!detectedModels.length)return label;
+  let result=label;
+  for(let i=0;i<detectedModels.length;i++){
+    const n=i+1;
+    result=result.replace(new RegExp(`回复${n}|res_${n}`,'gi'),detectedModels[i]);
+  }
+  return result;
+}
+
+// Bar chart layout helper — auto horizontal for long labels
+function barLayout(labels){
+  const maxLen=Math.max(...labels.map(l=>l.length));
+  if(maxLen<=4)return{bottom:30,rotate:0,horizontal:false};
+  if(maxLen<=10)return{bottom:55,rotate:25,horizontal:false};
+  return{horizontal:true};// switch to horizontal bar
+}
+
+// Render a bar chart (auto vertical/horizontal)
+function renderBarChart(el, labels, data, extraOpts){
+  const bl=barLayout(labels);
+  const tooltipCfg={trigger:'axis',confine:false,appendToBody:true,...(extraOpts?.tooltip||{})};
+
+  if(bl.horizontal){
+    // Auto-resize container for horizontal layout
+    const h=Math.max(200,labels.length*40+60);
+    el.style.height=h+'px';
+    const chart=echarts.init(el,'dark');
+    chart.setOption({
+      backgroundColor:'transparent',
+      tooltip:tooltipCfg,
+      grid:{left:Math.min(200,Math.max(80,labels.reduce((a,l)=>Math.max(a,l.length),0)*7+20)),right:50,top:15,bottom:25},
+      yAxis:{type:'category',data:[...labels].reverse(),axisLabel:{color:'#8b8fa3',fontSize:11,width:180,overflow:'truncate',ellipsis:'…'},axisLine:{lineStyle:{color:'#2a2e3d'}},inverse:false},
+      xAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+      series:[{type:'bar',barWidth:Math.min(30,200/labels.length),itemStyle:{borderRadius:[0,4,4,0]},data:[...data].reverse(),
+        label:{show:true,position:'right',color:'#e4e6ed',fontSize:11,fontWeight:600}}]
+    });
+    return chart;
+  }else{
+    const chart=echarts.init(el,'dark');
+    chart.setOption({
+      backgroundColor:'transparent',
+      tooltip:tooltipCfg,
+      grid:{left:50,right:20,top:25,bottom:bl.bottom},
+      xAxis:{type:'category',data:labels,axisLabel:{color:'#8b8fa3',fontSize:11,rotate:bl.rotate},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+      yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+      series:[{type:'bar',barWidth:Math.min(50,200/labels.length),itemStyle:{borderRadius:[4,4,0,0]},data,
+        label:{show:true,position:'top',color:'#e4e6ed',fontSize:11,fontWeight:600}}]
+    });
+  }
+  return chart;
+}
+
+function initDistCharts(field,values,ci){
+  const opts=field.options||[];
+  const shouldMap=mappingEnabled&&detectedModels.length>0&&isPositionalField(field);
+  const labels=shouldMap?opts.map(o=>mapLabel(o.label)):opts.map(o=>o.label);
+  const ec=['#00b894','#e17055','#fdcb6e','#a29bfe','#74b9ff','#00cec9'];
+
+  // Count
+  const counts={};opts.forEach(o=>counts[o.value]=0);
+  values.forEach(v=>{
+    if(Array.isArray(v.value)){v.value.forEach(item=>{if(item in counts)counts[item]++})}
+    else{if(v.value in counts)counts[v.value]++}
+  });
+  const data=opts.map((o,i)=>({value:counts[o.value],name:labels[i],itemStyle:{color:ec[i%ec.length]}}));
+
+  const pe=document.getElementById(`pie_${ci}`);
+  if(pe){
+    const p=echarts.init(pe,'dark');
+    p.setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,extraCssText:'max-width:280px;white-space:normal;word-break:break-all;',formatter:function(p){return '<div style="max-width:260px;word-break:break-all">'+p.name+'<br/>'+p.value+' ('+p.percent+'%)</div>'}},series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},label:{color:'#e4e6ed',fontSize:11,width:80,overflow:'truncate',ellipsis:'…'},data}]});
+    charts.push(p);
+  }
+
+  const be=document.getElementById(`bar_${ci}`);
+  if(be){
+    charts.push(renderBarChart(be,labels,data));
+  }
+}
+
+// ===== TEXT (textarea/text) RESULT =====
+function renderTextResult(field,title,values){
+  if(!values.length)return`<div class="no-data-card">📭 ${title}：无有效数据</div>`;
+
+  const total=parsedData.length;// Total records, not total values
+  const nonEmpty=values.filter(v=>typeof v.value==='string'&&v.value.trim().length>0);
+  const nonEmptyRate=(nonEmpty.length/Math.max(values.length,1)*100).toFixed(1);
+  const lengths=nonEmpty.map(v=>v.value.length);
+  const avgLen=lengths.length?Math.round(lengths.reduce((a,b)=>a+b,0)/lengths.length):0;
+  const maxLen=lengths.length?Math.max(...lengths):0;
+  const minLen=lengths.length?Math.min(...lengths):0;
+
+  return`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(0,184,148,.12);color:var(--green)">${TL[field.valueType]||field.valueType}</span></div>
+  <div class="rc-b"><div class="ts">
+    <div class="tc"><div class="tl">采集到</div><div class="tv" style="color:var(--text)">${values.length}</div></div>
+    <div class="tc"><div class="tl">非空率</div><div class="tv" style="color:var(--blue)">${nonEmptyRate}%</div></div>
+    <div class="tc"><div class="tl">非空条数</div><div class="tv" style="color:var(--green)">${nonEmpty.length}</div></div>
+  </div>
+  <div class="ts" style="margin-top:8px">
+    <div class="tc"><div class="tl">平均字数</div><div class="tv" style="color:var(--orange)">${avgLen}</div></div>
+    <div class="tc"><div class="tl">最短</div><div class="tv" style="color:var(--t2)">${minLen}</div></div>
+    <div class="tc"><div class="tl">最长</div><div class="tv" style="color:var(--red)">${maxLen}</div></div>
+  </div></div></div>`;
+}
+
+// ===== OTHER TYPES RESULT =====
+function renderOtherResult(field,title,values){
+  const nonEmpty=values.filter(v=>{
+    if(v.value===null||v.value===undefined||v.value==='')return false;
+    if(typeof v.value==='object'&&Object.keys(v.value).length===0)return false;
+    return true;
+  });
+  return`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(253,203,110,.12);color:var(--orange)">${TL[field.valueType]||field.valueType}</span></div>
+  <div class="rc-b"><div class="sr">
+    <div class="sb"><div class="sv">${values.length}</div><div class="sl">采集到</div></div>
+    <div class="sb"><div class="sv" style="color:var(--green)">${nonEmpty.length}</div><div class="sl">非空</div></div>
+    <div class="sb"><div class="sv" style="color:var(--blue)">${values.length?(nonEmpty.length/values.length*100).toFixed(1):'0'}%</div><div class="sl">非空率</div></div>
+  </div></div></div>`;
+}
+
+// ===== IMAGE ANNOTATION RESULT =====
+function renderImgAnnoResult(field,title,values,ci){
+  if(!values.length)return`<div class="no-data-card">📭 ${title}：无有效数据</div>`;
+
+  let hasAnno=0,totalRects=0;
+  const tagCounts={};
+
+  values.forEach(v=>{
+    const val=v.value;
+    if(!val||typeof val!=='object')return;
+    const annotated=val.annotated||[];
+    if(!annotated.length)return;
+    hasAnno++;
+    annotated.forEach(a=>{
+      const rects=a.rects||[];
+      totalRects+=rects.length;
+      const tag=String(a.tag||'未标记');
+      tagCounts[tag]=(tagCounts[tag]||0)+1;
+    });
+  });
+
+  const rate=(hasAnno/values.length*100).toFixed(1);
+  const avgRects=hasAnno?(totalRects/hasAnno).toFixed(1):'0';
+  const tags=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+
+  return`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(116,185,255,.12);color:var(--blue)">拉框标注</span></div><div class="rc-b">
+    <div class="sr">
+      <div class="sb"><div class="sv">${values.length}</div><div class="sl">采集到</div></div>
+      <div class="sb"><div class="sv" style="color:var(--green)">${rate}%</div><div class="sl">有标注率</div><div class="ss">${hasAnno} 条有拉框</div></div>
+      <div class="sb"><div class="sv" style="color:var(--blue)">${totalRects}</div><div class="sl">总标注框数</div></div>
+      <div class="sb"><div class="sv" style="color:var(--orange)">${avgRects}</div><div class="sl">平均每条框数</div></div>
+    </div>
+    ${tags.length?`<div class="section-title">Tag 分布</div><div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div>`:''}
+  </div></div>`;
+}
+
+function initImgAnnoCharts(values,ci){
+  const tagCounts={};
+  values.forEach(v=>{
+    const val=v.value;if(!val||typeof val!=='object')return;
+    (val.annotated||[]).forEach(a=>{
+      const tag=String(a.tag||'未标记');
+      tagCounts[tag]=(tagCounts[tag]||0)+1;
+    });
+  });
+  const tags=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+  if(!tags.length)return;
+
+  const ec=['#74b9ff','#fdcb6e','#a29bfe','#00cec9','#e17055','#00b894'];
+  const data=tags.map(([name,value],i)=>({name:'tag='+name,value,itemStyle:{color:ec[i%ec.length]}}));
+
+  const pe=document.getElementById(`pie_${ci}`);
+  if(pe){const p=echarts.init(pe,'dark');p.setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,extraCssText:'max-width:280px;white-space:normal;word-break:break-all;',formatter:function(p){return '<div style="max-width:260px;word-break:break-all">'+p.name+'<br/>'+p.value+' ('+p.percent+'%)</div>'}},series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},label:{color:'#e4e6ed',fontSize:12,width:80,overflow:'truncate',ellipsis:'…',formatter:'{b}\n{d}%'},data}]});charts.push(p)}
+
+  const be=document.getElementById(`bar_${ci}`);
+  if(be){charts.push(renderBarChart(be,data.map(d=>d.name),data))}
+}
+
+// ===== RESPONSES RANKING RESULT =====
+
+// Parse ranking values into standardized format
+function parseRankings(values){
+  const rankings=[];// [{modelName: rank, ...}]
+  const modelNames=new Set();
+
+  values.forEach(v=>{
+    const val=v.value;
+    if(!val||typeof val!=='object')return;
+
+    // Format: {rankings: [{rank:1, responseIds:["modelA"]}, ...]}
+    if(val.rankings&&Array.isArray(val.rankings)){
+      const entry={};
+      val.rankings.forEach(r=>{
+        const rank=r.rank;
+        const ids=r.responseIds||[];
+        ids.forEach(id=>{
+          if(id){entry[id]=rank;modelNames.add(id)}
+        });
+      });
+      if(Object.keys(entry).length)rankings.push(entry);
+      return;
+    }
+
+    // Format: array of ordered items
+    if(Array.isArray(val)){
+      const entry={};
+      val.forEach((item,idx)=>{
+        const name=typeof item==='object'?(item.model||item.name||`response${idx+1}`):String(item);
+        entry[name]=idx+1;modelNames.add(name);
+      });
+      if(Object.keys(entry).length)rankings.push(entry);
+      return;
+    }
+
+    // Format: {model: rank} object
+    const entry={};
+    for(const[k,v2]of Object.entries(val)){
+      if(typeof v2==='number'){entry[k]=v2;modelNames.add(k)}
+    }
+    if(Object.keys(entry).length)rankings.push(entry);
+  });
+
+  return{rankings,models:[...modelNames]};
+}
+
+function renderRankingResult(field,title,values,ci){
+  if(!values.length)return`<div class="no-data-card">📭 ${title}：无有效数据</div>`;
+
+  const{rankings,models}=parseRankings(values);
+  const n=models.length;
+
+  if(!n||!rankings.length){
+    return`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(108,92,231,.12);color:var(--al)">排序控件</span></div>
+    <div class="rc-b"><div class="sr"><div class="sb"><div class="sv">${values.length}</div><div class="sl">采集到</div></div><div class="sb"><div class="sv" style="color:var(--green)">${rankings.length}</div><div class="sl">有效排序</div></div></div></div></div>`;
+  }
+
+  // Compute avg rank and position distribution
+  const avgRanks={};
+  const posDist={};// model -> [count_at_rank1, count_at_rank2, ...]
+  models.forEach(m=>{avgRanks[m]=0;posDist[m]=new Array(n).fill(0)});
+
+  rankings.forEach(r=>{
+    models.forEach(m=>{
+      const rank=r[m];
+      if(rank>=1&&rank<=n){
+        avgRanks[m]+=rank;
+        posDist[m][rank-1]++;
+      }
+    });
+  });
+  models.forEach(m=>avgRanks[m]=(avgRanks[m]/rankings.length).toFixed(2));
+
+  // Win rate matrix
+  const winMatrix={};
+  models.forEach(a=>{winMatrix[a]={};models.forEach(b=>{winMatrix[a][b]=0})});
+  rankings.forEach(r=>{
+    for(let i=0;i<models.length;i++){
+      for(let j=i+1;j<models.length;j++){
+        const a=models[i],b=models[j];
+        if(r[a]<r[b])winMatrix[a][b]++;
+        else if(r[b]<r[a])winMatrix[b][a]++;
+      }
+    }
+  });
+
+  const sorted=[...models].sort((a,b)=>parseFloat(avgRanks[a])-parseFloat(avgRanks[b]));
+  const medals=['🥇','🥈','🥉'];
+  const rankColors=['var(--green)','var(--blue)','var(--orange)','var(--red)','var(--t2)'];
+
+  let html=`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(108,92,231,.12);color:var(--al)">排序控件</span></div><div class="rc-b">`;
+  html+=`<div class="sr"><div class="sb"><div class="sv">${values.length}</div><div class="sl">采集到</div></div><div class="sb"><div class="sv" style="color:var(--blue)">${n}</div><div class="sl">参与排序</div></div><div class="sb"><div class="sv" style="color:var(--green)">${rankings.length}</div><div class="sl">有效排序</div></div></div>`;
+
+  // Avg rank cards
+  html+=`<div class="section-title">平均排名（越小越好）</div><div class="sr">`;
+  sorted.forEach((m,i)=>{
+    html+=`<div class="sb"><div style="font-size:14px">${medals[i]||''}</div><div class="sv" style="color:${rankColors[i]}">${avgRanks[m]}</div><div class="sl" title="${m}" style="word-break:break-all">${m}</div></div>`;
+  });
+  html+=`</div>`;
+
+  // Stacked bar chart
+  html+=`<div class="section-title">各位次分布</div><div style="height:300px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r)" id="rankbar_${ci}"></div>`;
+
+  // Win matrix
+  html+=`<div class="section-title">胜率矩阵</div>`;
+  html+=`<table class="ft"><thead><tr><th></th>${models.map(m=>`<th title="${m}">${m.length>12?m.slice(0,12)+'…':m}</th>`).join('')}</tr></thead><tbody>`;
+  models.forEach(a=>{
+    html+=`<tr><td style="font-weight:500">${a.length>12?a.slice(0,12)+'…':a}</td>`;
+    models.forEach(b=>{
+      if(a===b){html+=`<td style="color:var(--t3)">—</td>`}
+      else{
+        const wins=winMatrix[a][b];
+        const total2=wins+(winMatrix[b][a]||0);
+        const pct=total2?(wins/total2*100).toFixed(0):0;
+        html+=`<td style="color:${pct>50?'var(--green)':'var(--red)'};font-weight:600">${pct}%</td>`;
+      }
+    });
+    html+=`</tr>`;
+  });
+  html+=`</tbody></table>`;
+
+  html+=`</div></div>`;
+  return html;
+}
+
+function initRankingCharts(values,ci){
+  const{rankings,models}=parseRankings(values);
+  const n=models.length;
+  if(!n||!rankings.length)return;
+
+  const posDist={};
+  models.forEach(m=>{posDist[m]=new Array(n).fill(0)});
+  rankings.forEach(r=>{
+    models.forEach(m=>{const rank=r[m];if(rank>=1&&rank<=n)posDist[m][rank-1]++});
+  });
+
+  const rankLabels=[];
+  for(let r=0;r<n;r++)rankLabels.push(`第${r+1}名`);
+  const rankColors=['#00b894','#74b9ff','#fdcb6e','#e17055','#a29bfe'];
+  const total=rankings.length;
+
+  const series=rankLabels.map((rl,r)=>({
+    name:rl,type:'bar',stack:'total',barWidth:50,
+    itemStyle:{color:rankColors[r%rankColors.length],borderRadius:r===n-1?[4,4,0,0]:0},
+    label:{show:true,formatter:p=>{const pct=(p.value/total*100).toFixed(0);return pct>5?pct+'%':''},color:'#fff',fontSize:11,fontWeight:600},
+    data:models.map(m=>posDist[m][r])
+  }));
+
+  const el=document.getElementById(`rankbar_${ci}`);
+  if(el){
+    const rkBl=barLayout(models);
+    const c2=echarts.init(el,'dark');
+    const tooltipFmt=params=>{
+      let s=params[0].axisValue+'<br>';
+      params.forEach(p=>{s+=`${p.marker} ${p.seriesName}: ${p.value} (${(p.value/total*100).toFixed(1)}%)<br>`});
+      return s};
+
+    if(rkBl.horizontal){
+      // Horizontal stacked bar for long model names
+      const rkH=Math.max(200,models.length*45+70);
+      el.style.height=rkH+'px';
+      const hSeries=rankLabels.map((rl,r)=>({
+        name:rl,type:'bar',stack:'total',barWidth:Math.min(25,120/n),
+        itemStyle:{color:rankColors[r%rankColors.length],borderRadius:r===n-1?[0,4,4,0]:0},
+        label:{show:true,formatter:p=>{const pct=(p.value/total*100).toFixed(0);return pct>5?pct+'%':''},color:'#fff',fontSize:11,fontWeight:600},
+        data:models.map(m=>posDist[m][r])
+      }));
+      c2.setOption({
+        backgroundColor:'transparent',
+        tooltip:{trigger:'axis',axisPointer:{type:'shadow'},confine:false,appendToBody:true,formatter:tooltipFmt},
+        legend:{data:rankLabels,textStyle:{color:'#8b8fa3',fontSize:11},top:8},
+        grid:{left:Math.min(200,Math.max(80,models.reduce((a,m)=>Math.max(a,m.length),0)*7+20)),right:30,top:45,bottom:25},
+        yAxis:{type:'category',data:models,axisLabel:{color:'#8b8fa3',fontSize:11,width:180,overflow:'truncate',ellipsis:'…'},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+        xAxis:{type:'value',max:total,axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+        series:hSeries
+      });
+    }else{
+      c2.setOption({
+        backgroundColor:'transparent',
+        tooltip:{trigger:'axis',axisPointer:{type:'shadow'},confine:false,appendToBody:true,formatter:tooltipFmt},
+        legend:{data:rankLabels,textStyle:{color:'#8b8fa3',fontSize:11},top:8},
+        grid:{left:60,right:20,top:45,bottom:rkBl.bottom},
+        xAxis:{type:'category',data:models,axisLabel:{color:'#8b8fa3',fontSize:11,rotate:rkBl.rotate},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+        yAxis:{type:'value',max:total,axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+        series
+      });
+    }
+    charts.push(c2);
+  }
+}
+
+// ===== TEXT LABEL RESULT =====
+function renderTextLabelResult(field,title,values,ci){
+  if(!values.length)return`<div class="no-data-card">📭 ${title}：无有效数据</div>`;
+
+  // Check if this is a sub-tag (extracted as isTextLabel from extractValues)
+  const isSubTag=values[0]&&values[0].isTextLabel;
+
+  if(isSubTag){
+    // Sub-tag mode: each value.value is array of tag annotation objects [{tagId,tagName,ranges,fieldValues}]
+    let totalAnnotations=0,totalRanges=0;
+    const fvKeys={};// fieldValues key -> count of non-empty
+
+    values.forEach(v=>{
+      const tags=v.value;// array of matching tag items
+      tags.forEach(t=>{
+        totalAnnotations++;
+        totalRanges+=(t.ranges||[]).length;
+        const fv=t.fieldValues||{};
+        for(const[k,fvVal]of Object.entries(fv)){
+          if(!fvKeys[k])fvKeys[k]={count:0,totalLen:0,samples:[]};
+          if(fvVal&&String(fvVal).trim()){
+            fvKeys[k].count++;
+            fvKeys[k].totalLen+=String(fvVal).length;
+            if(fvKeys[k].samples.length<3)fvKeys[k].samples.push(String(fvVal).slice(0,80));
+          }
+        }
+      });
+    });
+
+    const avgRanges=totalAnnotations?(totalRanges/totalAnnotations).toFixed(1):'0';
+    const fvEntries=Object.entries(fvKeys);
+
+    let html=`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(0,206,201,.12);color:var(--cyan)">子标签</span></div><div class="rc-b">`;
+    html+=`<div class="sr">
+      <div class="sb"><div class="sv" style="color:var(--green)">${values.length}</div><div class="sl">涉及条数</div></div>
+      <div class="sb"><div class="sv" style="color:var(--blue)">${totalAnnotations}</div><div class="sl">标注次数</div></div>
+      <div class="sb"><div class="sv" style="color:var(--orange)">${totalRanges}</div><div class="sl">标注片段数</div></div>
+      <div class="sb"><div class="sv">${avgRanges}</div><div class="sl">平均每次片段</div></div>
+    </div>`;
+
+    // Show fieldValues stats
+    if(fvEntries.length){
+      html+=`<div class="section-title">子字段统计</div>`;
+      html+=`<table class="ft"><thead><tr><th>字段</th><th>有值数</th><th>填写率</th><th>平均字数</th></tr></thead><tbody>`;
+      fvEntries.forEach(([k,info])=>{
+        const rate=totalAnnotations?(info.count/totalAnnotations*100).toFixed(1):'0';
+        const avgLen=info.count?(info.totalLen/info.count).toFixed(0):'0';
+        html+=`<tr><td>${k}</td><td>${info.count}</td><td style="color:${parseFloat(rate)>80?'var(--green)':'var(--orange)'}">${rate}%</td><td>${avgLen}</td></tr>`;
+      });
+      html+=`</tbody></table>`;
+    }
+
+    html+=`</div></div>`;
+    return html;
+  }
+
+  // Parent text_label mode: overall tag distribution
+  let hasAnno=0,totalTags=0;
+  const tagCounts={};
+
+  values.forEach(v=>{
+    const val=v.value;
+    if(!val)return;
+    if(Array.isArray(val)){
+      if(!val.length)return;
+      hasAnno++;
+      val.forEach(tag=>{
+        const name=tag.tagName||tag.tagId||tag.tag||'未知';
+        tagCounts[name]=(tagCounts[name]||0)+1;
+        totalTags++;
+      });
+    }else if(typeof val==='object'){
+      hasAnno++;
+      totalTags++;
+    }
+  });
+
+  const coverage=(hasAnno/values.length*100).toFixed(1);
+  const tags=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+
+  return`<div class="rc"><div class="rc-h"><h3>${title}</h3><span class="tag" style="background:rgba(0,206,201,.12);color:var(--cyan)">文本标注</span></div><div class="rc-b">
+    <div class="sr">
+      <div class="sb"><div class="sv">${values.length}</div><div class="sl">采集到</div></div>
+      <div class="sb"><div class="sv" style="color:var(--blue)">${hasAnno}</div><div class="sl">有标注</div></div>
+      <div class="sb"><div class="sv" style="color:var(--green)">${coverage}%</div><div class="sl">覆盖率</div></div>
+      <div class="sb"><div class="sv" style="color:var(--orange)">${totalTags}</div><div class="sl">总标注数</div></div>
+    </div>
+    ${tags.length?`<div class="section-title">标签分布</div><div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div>`:''}
+  </div></div>`;
+}
+
+function initTextLabelCharts(field,values,ci){
+  // Sub-tag mode has no charts (stats table only)
+  if(values[0]&&values[0].isTextLabel)return;
+
+  const tagCounts={};
+  values.forEach(v=>{
+    if(!Array.isArray(v.value))return;
+    v.value.forEach(tag=>{
+      const name=tag.tagName||tag.tagId||tag.tag||'未知';
+      tagCounts[name]=(tagCounts[name]||0)+1;
+    });
+  });
+  const tags=Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+  if(!tags.length)return;
+
+  const ec=['#74b9ff','#e17055','#fdcb6e','#a29bfe','#00cec9','#00b894'];
+  const data=tags.map(([name,value],i)=>({name,value,itemStyle:{color:ec[i%ec.length]}}));
+
+  const pe=document.getElementById(`pie_${ci}`);
+  if(pe){const p=echarts.init(pe,'dark');p.setOption({backgroundColor:'transparent',tooltip:{trigger:'item',confine:true,extraCssText:'max-width:280px;white-space:normal;word-break:break-all;',formatter:function(p){return '<div style="max-width:260px;word-break:break-all">'+p.name+'<br/>'+p.value+' ('+p.percent+'%)</div>'}},series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},label:{color:'#e4e6ed',fontSize:11,width:80,overflow:'truncate',ellipsis:'…'},data}]});charts.push(p)}
+
+  const be=document.getElementById(`bar_${ci}`);
+  if(be){charts.push(renderBarChart(be,data.map(d=>d.name),data))}
+}
+
+// ===== FIELD MATCH CHECK =====
+function checkFieldMatch(){
+  const warnEl=document.getElementById('matchWarn');
+  if(!parsedFields.length||!parsedData.length){warnEl.style.display='none';return}
+
+  // Collect all field dataIndex from config
+  const configFields=new Set(parsedFields.map(f=>f.dataIndex));
+
+  // Collect all result keys from data
+  const dataFields=new Set();
+  const sampleSize=Math.min(parsedData.length,100);// check first 100 records
+  for(let i=0;i<sampleSize;i++){
+    const labels=parsedData[i].labels||[];
+    labels.forEach(l=>{
+      const r=l.result;
+      if(r&&typeof r==='object'){
+        Object.keys(r).forEach(k=>dataFields.add(k));
+      }
+    });
+  }
+
+  // Calculate intersection
+  const matched=[...configFields].filter(f=>dataFields.has(f));
+
+  if(matched.length===0){
+    warnEl.innerHTML='⚠️ <b>Config 字段与数据不匹配</b>：数据中未找到任何 Config 定义的字段，请确认是否上传了对应的数据文件';
+    warnEl.style.display='';
+    showToast('⚠️ Config 字段与数据完全不匹配，请检查文件','error',4000);
+  }else if(matched.length<configFields.size){
+    const missing=[...configFields].filter(f=>!dataFields.has(f));
+    warnEl.innerHTML=`ℹ️ ${matched.length}/${configFields.size} 个字段匹配成功，未匹配：${missing.join('、')}`;
+    warnEl.style.display='';
+  }else{
+    warnEl.style.display='none';
+  }
+}
+
+// ===== TAB SWITCHING =====
+let currentTab='field';
+let summaryCharts=[];
+
+function switchTab(tab){
+  currentTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.classList.toggle('active',t.dataset.tab===tab);
+  });
+  document.getElementById('fieldPanel').style.display=tab==='field'?'':'none';
+  document.getElementById('summaryPanel').style.display=tab==='summary'?'':'none';
+  document.getElementById('emptyS').style.display='none';
+
+  if(tab==='summary'&&parsedData.length){
+    runModelSummary();
+  }
+}
+
+function showTabBar(){
+  document.getElementById('tabBar').style.display='';
+}
+
+// ===== MODEL SUMMARY =====
+function detectIssueField(opts){
+  if(!opts||opts.length<3)return false;
+  const joined=opts.map(o=>(o.label||'')).join('|');
+  const hasNeither=/(均不|均无|都正确|都不存在|都没|都无)/.test(joined);
+  const hasBoth=/(均有|均存在|都不正确|都有|都存在|都错)/.test(joined);
+  if(hasNeither&&hasBoth)return true;
+  if(/1.*正确.*2.*不正确|1.*存在.*2.*不存在|1.*好.*2.*不好/.test(joined))return true;
+  if(/1.*不正确.*2.*正确|1.*不存在.*2.*存在/.test(joined))return true;
+  if(/都[^不\|]*\|/.test(joined)&&/都不/.test(joined))return true;
+  return false;
+}
+
+function detectPrefField(opts){
+  if(!opts||opts.length<2)return false;
+  const joined=opts.map(o=>(o.label||'')).join('|');
+  const has1=/(1.*好|1.*更好|1.*优|1.*胜)/.test(joined);
+  const has2=/(2.*好|2.*更好|2.*优|2.*胜)/.test(joined);
+  if(has1&&has2)return true;
+  if(/优于/.test(joined)&&joined.split('优于').length>=3)return true;
+  return false;
+}
+
+function parseIssueMappingSummary(opts){
+  const map={};
+  opts.forEach(o=>{
+    const lb=o.label||'';
+    if(/均不存在|均无|都没有/.test(lb)){map.neither=o.value;return}
+    if(/均存在|均有/.test(lb)){map.both=o.value;return}
+    if(/1.*存在.*2.*不|1.*有.*2.*[没不无]/.test(lb)){map.entity1Only=o.value;return}
+    if(/2.*存在.*1.*不|2.*有.*1.*[没不无]|1.*不.*2.*存在/.test(lb)){map.entity2Only=o.value;return}
+    if(/都正确|均正确/.test(lb)&&!/不正确|不/.test(lb.replace(/都正确|均正确/g,''))){map.neither=o.value;return}
+    if(/都不正确|均不正确/.test(lb)){map.both=o.value;return}
+    if(/1.*正确.*2.*不正确/.test(lb)){map.entity2Only=o.value;return}
+    if(/1.*不正确.*2.*正确/.test(lb)){map.entity1Only=o.value;return}
+    if(/2.*正确.*1.*不正确/.test(lb)){map.entity1Only=o.value;return}
+    if(/2.*不正确.*1.*正确/.test(lb)){map.entity2Only=o.value;return}
+  });
+  if(Object.keys(map).length<3&&opts.length===4){
+    map.neither=map.neither??opts[0].value;
+    map.both=map.both??opts[1].value;
+    map.entity1Only=map.entity1Only??opts[2].value;
+    map.entity2Only=map.entity2Only??opts[3].value;
+  }
+  return map;
+}
+
+function parsePrefMappingSummary(opts){
+  const map={};
+  opts.forEach(o=>{
+    const lb=o.label||'';
+    if(/(?:^|judgement|回复|res_?|response|模型)\s*1.*(?:好|更好|优|胜)/.test(lb)&&!/2.*(?:好|更好|优|胜)/.test(lb)){map.entity1Win=o.value;return}
+    if(/(?:^|judgement|回复|res_?|response|模型)\s*2.*(?:好|更好|优|胜)/.test(lb)&&!/1.*(?:好|更好|优|胜)/.test(lb)){map.entity2Win=o.value;return}
+    if(/1.*优于.*2/.test(lb)){map.entity1Win=o.value;return}
+    if(/2.*优于.*1/.test(lb)){map.entity2Win=o.value;return}
+    if(/无偏|相同|持平|一样|无差|差不多|^tie$/i.test(lb)){map.tie=o.value;return}
+  });
+  return map;
+}
+
+function cleanSumLabel(text){
+  return(text||'').replace(/[""\u201C\u201D]/g,'').replace(/维度$/,'').trim();
+}
+
+function wrapSumLabel(text,maxLen){
+  if(!text||text.length<=maxLen)return text;
+  const lines=[];
+  for(let i=0;i<text.length;i+=maxLen)lines.push(text.slice(i,i+maxLen));
+  return lines.join('\n');
+}
+
+function runModelSummary(){
+  summaryCharts.forEach(c=>c.dispose());summaryCharts=[];
+  const panel=document.getElementById('summaryPanel');
+
+  if(!parsedFields.length||!parsedData.length){
+    panel.innerHTML='<div style="text-align:center;color:var(--t2);padding:60px">请先上传 Config 和 JSONL 数据</div>';
+    return;
+  }
+
+  // Detect models
+  const modelSet=new Set();
+  parsedData.forEach(r=>(r.responses||[]).forEach(resp=>{if(resp.model)modelSet.add(resp.model)}));
+  const models=[...modelSet];
+
+  if(models.length<2){
+    panel.innerHTML='<div style="text-align:center;color:var(--t2);padding:60px">需要至少2个模型的对比数据才能进行汇总</div>';
+    return;
+  }
+
+  // Find indicators from parsedFields
+  const indicators=[];
+
+  // Helper: get sub-field options
+  function getSubOpts(field){
+    return field.options||(field.fieldProps||{}).options||[];
+  }
+
+  parsedFields.forEach(f=>{
+    // Top-level radio
+    if(['radio','checkbox'].includes(f.valueType)){
+      const opts=f.options||[];
+      if(detectPrefField(opts)){
+        indicators.push({parentKey:null,directKey:f.dataIndex,label:f.title,issue:null,pref:{dataIndex:f.dataIndex,options:opts}});
+      }
+      return;
+    }
+
+    // Depend fields
+    if(f.valueType==='depend'&&f.subFields&&f.subFields.length){
+      let issueField=null,prefField=null;
+      f.subFields.forEach(sf=>{
+        const opts=sf.options||[];
+        if(!opts.length)return;
+        if(detectIssueField(opts))issueField={dataIndex:sf.dataIndex,options:opts};
+        if(detectPrefField(opts))prefField={dataIndex:sf.dataIndex,options:opts};
+      });
+      if(issueField||prefField){
+        indicators.push({parentKey:f.dataIndex,directKey:null,label:f.title,issue:issueField,pref:prefField});
+      }
+    }
+  });
+
+  if(!indicators.length){
+    panel.innerHTML='<div style="text-align:center;color:var(--t2);padding:60px">未检测到可汇总的指标<br><span style="font-size:11px">需要 depend 字段包含存在性/偏好型子字段，或顶层偏好型 radio</span></div>';
+    return;
+  }
+
+  // Aggregate
+  const modelStats={};
+  models.forEach(m=>{
+    modelStats[m]=indicators.map(()=>({issueCount:0,prefWin:0,prefTie:0,prefTotal:0,totalRecords:0}));
+  });
+
+  parsedData.forEach(rec=>{
+    const order=(rec.responses||[]).map(r=>r.model);
+    if(order.length<2)return;
+    (rec.labels||[]).forEach(label=>{
+      const result=label.result;
+      if(!result||typeof result!=='object')return;
+      indicators.forEach((ind,ii)=>{
+        let parent;
+        if(ind.directKey){parent=result}
+        else{parent=result[ind.parentKey];if(!parent||typeof parent!=='object')return}
+
+        if(ind.issue){
+          const imap=parseIssueMappingSummary(ind.issue.options);
+          const iv=parent[ind.issue.dataIndex];
+          if(iv!==undefined&&iv!==null&&iv!==''){
+            models.forEach(m=>{
+              const pos=order.indexOf(m);if(pos<0)return;
+              modelStats[m][ii].totalRecords++;
+              const isFirst=(pos===0);
+              if(isFirst&&(iv==imap.entity1Only||iv==imap.both))modelStats[m][ii].issueCount++;
+              else if(!isFirst&&(iv==imap.entity2Only||iv==imap.both))modelStats[m][ii].issueCount++;
+            });
+          }
+        }
+
+        if(ind.pref){
+          const pmap=parsePrefMappingSummary(ind.pref.options);
+          const pv=parent[ind.pref.dataIndex];
+          if(pv!==undefined&&pv!==null&&pv!==''){
+            models.forEach(m=>{
+              const pos=order.indexOf(m);if(pos<0)return;
+              modelStats[m][ii].prefTotal++;
+              const isFirst=(pos===0);
+              if(isFirst&&pv==pmap.entity1Win)modelStats[m][ii].prefWin++;
+              else if(!isFirst&&pv==pmap.entity2Win)modelStats[m][ii].prefWin++;
+              else if(pmap.tie!==undefined&&pv==pmap.tie)modelStats[m][ii].prefTie++;
+            });
+          }
+        }
+      });
+    });
+  });
+
+  // Render
+  let html='';
+  const mc=['#74b9ff','#e17055','#00b894','#fdcb6e','#a29bfe','#00cec9'];
+
+  // Overview
+  html+=`<div class="sr"><div class="sb"><div class="sv" style="color:var(--blue)">${parsedData.length}</div><div class="sl">数据条数</div></div>
+    <div class="sb"><div class="sv" style="color:var(--green)">${models.length}</div><div class="sl">模型数量</div></div>
+    <div class="sb"><div class="sv" style="color:var(--orange)">${indicators.length}</div><div class="sl">评测维度</div></div></div>`;
+
+  // Issue table
+  const hasIssue=indicators.some(i=>i.issue);
+  if(hasIssue){
+    html+=`<div class="sum-card"><div class="sum-card-h"><h3>🔍 问题存在性汇总</h3><span class="tag" style="background:rgba(225,112,85,.12);color:var(--red)">越少越好</span></div><div style="padding:16px 20px 20px">`;
+    html+=`<table class="ft"><thead><tr><th style="width:160px">模型</th>`;
+    indicators.forEach(ind=>{if(ind.issue)html+=`<th>${cleanSumLabel(ind.label)}</th>`});
+    html+=`<th>总问题数</th></tr></thead><tbody>`;
+    const maxIssues=models.map(m=>modelStats[m].reduce((s,x)=>s+x.issueCount,0));
+    models.forEach(m=>{
+      const stats=modelStats[m];
+      const total=stats.reduce((s,x)=>s+x.issueCount,0);
+      const sn=m.length>30?m.slice(0,30)+'…':m;
+      html+=`<tr><td class="model-name" title="${m}">${sn}</td>`;
+      indicators.forEach((ind,ii)=>{
+        if(!ind.issue)return;
+        const s=stats[ii];
+        const rate=s.totalRecords?(s.issueCount/s.totalRecords*100).toFixed(1):'0';
+        const isWorst=models.every(m2=>modelStats[m2][ii].issueCount<=s.issueCount)&&s.issueCount>0;
+        html+=`<td><span style="font-weight:700;font-size:14px;color:${s.issueCount===0?'var(--green)':isWorst?'var(--red)':''}">${s.issueCount}</span> <span style="font-size:10px;color:var(--t3)">(${rate}%)</span></td>`;
+      });
+      html+=`<td><span style="font-weight:700;font-size:14px;color:${total===Math.min(...maxIssues)?'var(--green)':'var(--red)'}">${total}</span></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div class="sum-chart" id="sumIssueBar"></div>`;
+    html+=`</div></div>`;
+  }
+
+  // Preference table
+  const hasPref=indicators.some(i=>i.pref);
+  if(hasPref){
+    html+=`<div class="sum-card"><div class="sum-card-h"><h3>🏆 偏好胜率汇总</h3><span class="tag" style="background:rgba(0,184,148,.12);color:var(--green)">越高越好</span></div><div style="padding:16px 20px 20px">`;
+    html+=`<table class="ft"><thead><tr><th style="width:160px">模型</th>`;
+    indicators.forEach(ind=>{if(ind.pref)html+=`<th>${cleanSumLabel(ind.label)}</th>`});
+    html+=`<th>平均胜率</th></tr></thead><tbody>`;
+    models.forEach(m=>{
+      const stats=modelStats[m];
+      let tw=0,tt=0,ta=0;
+      const sn=m.length>30?m.slice(0,30)+'…':m;
+      html+=`<tr><td class="model-name" title="${m}">${sn}</td>`;
+      indicators.forEach((ind,ii)=>{
+        if(!ind.pref)return;
+        const s=stats[ii];
+        const wr=s.prefTotal?(s.prefWin/s.prefTotal*100).toFixed(1):'0';
+        const lose=s.prefTotal-s.prefWin-s.prefTie;
+        tw+=s.prefWin;tt+=s.prefTie;ta+=s.prefTotal;
+        const isBest=models.every(m2=>{const s2=modelStats[m2][ii];return(s.prefTotal?(s.prefWin/s.prefTotal):0)>=(s2.prefTotal?(s2.prefWin/s2.prefTotal):0)});
+        html+=`<td><span style="font-weight:700;font-size:14px;color:${isBest&&s.prefWin>0?'var(--green)':''}">${wr}%</span> <span style="font-size:10px;color:var(--t3)">胜${s.prefWin} 平${s.prefTie} 负${lose}</span></td>`;
+      });
+      const ar=ta?(tw/ta*100).toFixed(1):'0';
+      const atr=ta?(tt/ta*100).toFixed(1):'0';
+      html+=`<td><span style="font-weight:700;font-size:14px;color:${parseFloat(ar)>50?'var(--green)':''}">${ar}%</span> <span style="font-size:10px;color:var(--t3)">平${atr}%</span></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div class="sum-chart" id="sumPrefBar"></div>`;
+    html+=`</div></div>`;
+  }
+
+  panel.innerHTML=html;
+
+  // Charts
+  setTimeout(()=>{
+    if(hasIssue){
+      const el=document.getElementById('sumIssueBar');
+      if(el){
+        const c=echarts.init(el,'dark');
+        const indLabels=indicators.filter(i=>i.issue).map(i=>cleanSumLabel(i.label));
+        const wl=indLabels.map(l=>wrapSumLabel(l,8));
+        const ml=Math.max(...wl.map(l=>(l.match(/\n/g)||[]).length+1));
+        const series=models.map((m,mi)=>({
+          name:m.length>20?m.slice(0,20)+'…':m,type:'bar',
+          data:indicators.filter(i=>i.issue).map(ind=>{const idx=indicators.indexOf(ind);return modelStats[m][idx].issueCount}),
+          itemStyle:{color:mc[mi%mc.length]},
+          label:{show:true,position:'top',fontSize:10,color:'#e4e6ed'}
+        }));
+        c.setOption({backgroundColor:'transparent',
+          title:{text:'问题数量对比',textStyle:{color:'#e4e6ed',fontSize:13},left:16,top:10},
+          tooltip:{trigger:'axis',confine:true},
+          legend:{data:series.map(s=>s.name),textStyle:{color:'#8b8fa3',fontSize:10},top:10,right:16},
+          grid:{left:50,right:20,top:50,bottom:20+ml*16},
+          xAxis:{type:'category',data:wl,axisLabel:{color:'#8b8fa3',fontSize:11,interval:0},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+          yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+          series});
+        summaryCharts.push(c);
+      }
+    }
+    if(hasPref){
+      const el=document.getElementById('sumPrefBar');
+      if(el){
+        const c=echarts.init(el,'dark');
+        const indList=indicators.filter(i=>i.pref);
+        const pl=indList.map(i=>wrapSumLabel(cleanSumLabel(i.label),8));
+        const pml=Math.max(...pl.map(l=>(l.match(/\n/g)||[]).length+1));
+        const series=models.map((m,mi)=>({
+          name:m.length>20?m.slice(0,20)+'…':m,type:'bar',
+          data:indList.map(ind=>{const idx=indicators.indexOf(ind);const s=modelStats[m][idx];return s.prefTotal?parseFloat((s.prefWin/s.prefTotal*100).toFixed(1)):0}),
+          itemStyle:{color:mc[mi%mc.length]},
+          label:{show:true,position:'top',fontSize:10,color:'#e4e6ed',formatter:'{c}%'}
+        }));
+        c.setOption({backgroundColor:'transparent',
+          title:{text:'偏好胜率对比',textStyle:{color:'#e4e6ed',fontSize:13},left:16,top:10},
+          tooltip:{trigger:'axis',confine:true,formatter:params=>{let s=params[0].axisValue.replace(/\n/g,'')+'\n';params.forEach(p=>s+=p.marker+' '+p.seriesName+': '+p.value+'%\n');return s}},
+          legend:{data:series.map(s=>s.name),textStyle:{color:'#8b8fa3',fontSize:10},top:10,right:16},
+          grid:{left:50,right:20,top:50,bottom:20+pml*16},
+          xAxis:{type:'category',data:pl,axisLabel:{color:'#8b8fa3',fontSize:11,interval:0},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+          yAxis:{type:'value',max:100,axisLabel:{color:'#8b8fa3',formatter:'{value}%'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+          series});
+        summaryCharts.push(c);
+      }
+    }
+  },100);
+}
+
+// ===== DRAG & DROP =====
+function initDragDrop(){
+  const configBox=document.getElementById('upConfig');
+  const dataBox=document.getElementById('upData');
+
+  function prevent(e){e.preventDefault();e.stopPropagation()}
+
+  // Config box
+  ['dragenter','dragover'].forEach(evt=>{
+    configBox.addEventListener(evt,e=>{prevent(e);configBox.classList.add('drag-over')});
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    configBox.addEventListener(evt,e=>{prevent(e);configBox.classList.remove('drag-over')});
+  });
+  configBox.addEventListener('drop',e=>{
+    prevent(e);
+    const files=e.dataTransfer.files;
+    if(files.length){
+      const input=document.getElementById('fileConfig');
+      input.files=files;
+      onConfigUpload(input);
+    }
+  });
+
+  // Data box
+  ['dragenter','dragover'].forEach(evt=>{
+    dataBox.addEventListener(evt,e=>{prevent(e);dataBox.classList.add('drag-over')});
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dataBox.addEventListener(evt,e=>{prevent(e);dataBox.classList.remove('drag-over')});
+  });
+  dataBox.addEventListener('drop',e=>{
+    prevent(e);
+    const files=e.dataTransfer.files;
+    if(files.length){
+      const input=document.getElementById('fileData');
+      input.files=files;
+      onDataUpload(input);
+    }
+  });
+
+  // Also prevent default on whole page to avoid browser opening the file
+  ['dragover','drop'].forEach(evt=>{
+    document.body.addEventListener(evt,prevent);
+  });
+}
+
+// ===== INIT =====
+window.addEventListener('resize',()=>{charts.forEach(c=>c.resize());summaryCharts.forEach(c=>c.resize())});
+initDragDrop();
+</script>
+</body>
+</html>

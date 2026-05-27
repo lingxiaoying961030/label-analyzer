@@ -1,0 +1,184 @@
+{
+  "id": "01KJYQZWY4V4BW4J111BT9GT3D",
+  "name": "指令遵循评测集v3-数量统计annotate",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "checklist_type",
+              "dependency": [],
+              "dependencyType": "and",
+              "initialValue": 1,
+              "options": [
+                {
+                  "label": "合理",
+                  "value": 1
+                },
+                {
+                  "label": "不合理",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "检查项合理性判断",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "instruction_follow_judge_respons1",
+              "dependency": [
+                {
+                  "dataIndex": "checklist_type",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "遵循",
+                  "value": 1
+                },
+                {
+                  "label": "不遵循",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "回复1检查项遵循判断",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "instruction_follow_judge_respons2",
+              "dependency": [
+                {
+                  "dataIndex": "checklist_type",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "遵循",
+                  "value": 1
+                },
+                {
+                  "label": "不遵循",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "回复2检查项遵循判断",
+              "tooltip": "",
+              "valueType": "radio"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "checklist_follow_judge",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "遵循判断",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "object",
+              "fieldProps": null,
+              "title": "计数目标",
+              "valueType": "textarea"
+            },
+            {
+              "dataIndex": "res1_required_quantity",
+              "fieldProps": null,
+              "title": "回复1要求数量",
+              "valueType": "text"
+            },
+            {
+              "dataIndex": "res2_required_quantity",
+              "fieldProps": null,
+              "title": "回复2要求数量",
+              "valueType": "text"
+            },
+            {
+              "dataIndex": "res1_antual_quantity",
+              "fieldProps": null,
+              "title": "回复1实际数量",
+              "valueType": "text"
+            },
+            {
+              "dataIndex": "res2_antual_quantity",
+              "fieldProps": null,
+              "title": "回复2实际数量",
+              "valueType": "text"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "quantity",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "数量统计",
+      "valueType": "form_list"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea"
+    }
+  ]
+}

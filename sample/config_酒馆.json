@@ -1,0 +1,449 @@
+{
+  "id": "01KRNEKV9C8SMFAK11JN9XYFPJ",
+  "name": "酒馆评测表单中文",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "character_shaping_note",
+                      "title": "角色塑造备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "character_shaping",
+              "title": "角色塑造",
+              "tooltip": "#d30021"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "instruction_following_note",
+                      "title": "指令遵循备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "instruction_following",
+              "title": "指令遵循",
+              "tooltip": "#ecdf28"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "writing_expression_note",
+                      "title": "文笔与表达备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "writing_expression",
+              "title": "文笔与表达",
+              "tooltip": "#42ded9"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "logic_detail_note",
+                      "title": "逻辑与细节问题备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "logic_detail",
+              "title": "逻辑与细节",
+              "tooltip": "#7191c4"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "format_technical_specification_note",
+                      "title": "格式与技术规范备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "format_technical_specification",
+              "title": "格式与技术规范",
+              "tooltip": "#fca71e"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "long_range_dialogue_stability_note",
+                      "title": "长程对话稳定性备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "long_range_dialogue_stability",
+              "title": "长程对话稳定性",
+              "tooltip": "#9cc4b0"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "goodcase_note",
+                      "title": "goodcase备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "goodcase",
+              "title": "goodcase",
+              "tooltip": "#5248a5"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "order_reason",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "请检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "排序原因",
+      "valueType": "text_label"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "character_shaping",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "角色塑造",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "instruction_following",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "指令遵循",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "writing_expression",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "文笔与表达",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "logic_detail",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "逻辑与细节",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "format_technical_specification",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "格式与技术规范",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "long_range_dialogue_stability",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 3
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "长程对话稳定性",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "overall",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 3
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "整体",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "原因",
+      "valueType": "textarea_auto_height"
+    }
+  ]
+}

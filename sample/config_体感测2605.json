@@ -1,0 +1,177 @@
+{
+  "id": "01KR37T8RJ035EBFE3VSA4G53A",
+  "name": "体感测表单_2605",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "continuousRanking": false,
+      "dataIndex": "order",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "排序",
+      "valueType": "responses_ranking"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "instruction_following_note",
+                      "title": "指令遵循问题备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "instruction_following",
+              "title": "指令遵循问题",
+              "tooltip": "#e96060"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "correctness_note",
+                      "title": "正确性问题备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "correctness",
+              "title": "正确性问题",
+              "tooltip": "#f39326"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "logic_note",
+                      "title": "逻辑错误备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "logic",
+              "title": "逻辑错误",
+              "tooltip": "#d693e8"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "expression_note",
+                      "title": "表达流畅度备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "expression",
+              "title": "表达流畅度",
+              "tooltip": "#94cfed"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "other_note",
+                      "title": "其他问题备注",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "other",
+              "title": "其他问题",
+              "tooltip": "#3880f2"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "goodcase_note",
+                      "title": "记录",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "goodcase",
+              "title": "goodcase",
+              "tooltip": "#65bd3f"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "order_reason",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "请检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "排序原因",
+      "valueType": "text_label"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "理由补充",
+      "valueType": "textarea"
+    }
+  ]
+}

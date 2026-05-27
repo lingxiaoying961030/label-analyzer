@@ -1,0 +1,148 @@
+{
+  "id": "01KBEG3ZHM1E6XP30097AH73R1",
+  "name": "fc拉框",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "judgment",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "否",
+                  "value": 0
+                },
+                {
+                  "label": "是",
+                  "value": 1
+                }
+              ],
+              "required": true,
+              "title": "判断",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "original_box",
+              "dependency": [
+                {
+                  "dataIndex": "judgment",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "完全正确",
+                  "value": 0
+                },
+                {
+                  "label": "正确但有瑕疵",
+                  "value": 1
+                },
+                {
+                  "label": "错误-未框全或框错",
+                  "value": 2
+                }
+              ],
+              "required": true,
+              "title": "原拉框范围是否准确",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "reason",
+              "dependency": [
+                {
+                  "dataIndex": "judgment",
+                  "operator": "eq",
+                  "value": 0
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "模型裁剪思路错误or模型幻觉",
+                  "value": 0
+                },
+                {
+                  "label": "裁剪示意图中不存在完整目标",
+                  "value": 1
+                }
+              ],
+              "required": true,
+              "title": "think过程错误原因",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "newbox",
+                      "title": "框选",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "redraw",
+              "dependency": [
+                {
+                  "dataIndex": "original_box",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "original_box",
+                  "operator": "eq",
+                  "value": 2
+                },
+                {
+                  "dataIndex": "reason",
+                  "operator": "eq",
+                  "value": 0
+                },
+                {
+                  "dataIndex": "reason",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "or",
+              "required": false,
+              "title": "重新拉框",
+              "tooltip": "",
+              "valueType": "image_annotation"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "1-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "think_correctness",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "模型think过程是否正确",
+      "valueType": "depend"
+    }
+  ]
+}

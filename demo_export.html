@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Analyzer - 导出功能 Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#161923;--s2:#1c1f2e;--sh:rgba(108,92,231,0.06);--border:#282d3e;--bl:#333849;--text:#e4e6ed;--t2:#8b8fa3;--t3:#5a5e72;--accent:#6c5ce7;--al:#a29bfe;--green:#00b894;--red:#e17055;--orange:#fdcb6e;--blue:#74b9ff;--cyan:#00cec9;--R:10px;--r:6px}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);padding:24px;overflow-y:auto}
+
+  .res-header{font-size:13px;color:var(--t2);margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .res-header::before{content:'';width:3px;height:14px;background:var(--accent);border-radius:2px;flex-shrink:0}
+
+  /* Export buttons */
+  .export-bar{display:flex;gap:6px;margin-left:auto}
+  .export-btn{padding:5px 12px;border-radius:var(--r);font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--t2);font-family:inherit;transition:.2s;display:flex;align-items:center;gap:4px}
+  .export-btn:hover{border-color:var(--accent);color:var(--text);background:var(--sh)}
+  .export-btn:active{transform:scale(.97)}
+  .export-btn.exporting{opacity:.5;cursor:wait}
+
+  /* Result cards */
+  .rc{background:var(--surface);border-radius:var(--R);border:1px solid var(--border);margin-bottom:16px;overflow:visible}
+  .rc-h{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .rc-h h3{font-size:15px;font-weight:600;flex:1}
+  .rc-h .tag{font-size:10px;padding:2px 7px;border-radius:3px}
+  .rc-b{padding:16px 20px}
+  .sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:16px}
+  .sb{background:var(--bg);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--border)}
+  .sv{font-size:22px;font-weight:700;line-height:1.2}
+  .sl{font-size:10px;color:var(--t2);margin-top:2px}
+  .ss{font-size:9px;color:var(--t3);margin-top:1px}
+  .cr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .cb{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);height:280px}
+  .section-title{font-size:12px;color:var(--t2);margin:14px 0 8px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .section-title::before{content:'';width:2px;height:10px;background:var(--blue);border-radius:1px}
+
+  /* Multi-tagger */
+  .mt-section{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+  .mt-title{font-size:12px;font-weight:600;color:var(--blue)}
+  .mt-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(116,185,255,.12);color:var(--blue)}
+  .mt-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px}
+  .mt-stat{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:10px;text-align:center}
+  .mt-stat .mt-sv{font-size:20px;font-weight:700;line-height:1.2}
+  .mt-stat .mt-sl{font-size:10px;color:var(--t2);margin-top:2px}
+  .mt-detail-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+  .mt-detail-table th{text-align:left;padding:6px 10px;color:var(--t2);border-bottom:1px solid var(--border);font-size:10px}
+  .mt-detail-table td{padding:6px 10px;border-bottom:1px solid rgba(40,45,62,.4)}
+  .kappa-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;width:100px;display:inline-block;vertical-align:middle;margin-left:6px}
+  .kappa-fill{height:100%;border-radius:3px}
+
+  /* Text result */
+  .ts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+  .tl{font-size:11px;color:var(--t2);margin-bottom:4px}
+  .tv{font-size:20px;font-weight:700}
+
+  /* Toast */
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;pointer-events:none;opacity:0;transition:opacity .3s}
+  .toast.show{opacity:1}
+  .toast.success{background:#00b894;color:#fff}
+</style>
+</head>
+<body>
+
+<div id="exportArea">
+  <div class="res-header">
+    <span>分析结果 · 2 个字段 · rubic修改前后偏好0515 · 36 条数据</span>
+    <div class="export-bar">
+      <button class="export-btn" onclick="exportPNG()" id="btnPNG">📷 导出 PNG</button>
+      <button class="export-btn" onclick="exportCSV()" id="btnCSV">📊 导出 CSV</button>
+    </div>
+  </div>
+
+  <div id="resultCards">
+    <!-- Card 1: 排序 (radio) -->
+    <div class="rc">
+      <div class="rc-h">
+        <h3>排序</h3>
+        <span class="tag" style="background:rgba(108,92,231,.12);color:var(--al)">单选</span>
+      </div>
+      <div class="rc-b">
+        <div class="sr" id="distStats"></div>
+        <div class="cr">
+          <div class="cb" id="pie_0"></div>
+          <div class="cb" id="bar_0"></div>
+        </div>
+
+        <!-- Multi-tagger section -->
+        <div class="mt-section">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <span class="mt-title">👥 多人标注一致性分析</span>
+            <span class="mt-badge" id="mtBadge"></span>
+          </div>
+          <div class="mt-stats" id="mtStats"></div>
+          <div id="kappaBar"></div>
+          <div class="section-title">各标注员分布对比</div>
+          <table class="mt-detail-table" id="taggerTable"></table>
+          <div class="section-title" style="margin-top:14px">分歧类型分布</div>
+          <table class="mt-detail-table" id="disagreeTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: 原因 (textarea) -->
+    <div class="rc">
+      <div class="rc-h">
+        <h3>原因</h3>
+        <span class="tag" style="background:rgba(0,184,148,.12);color:var(--green)">文本框</span>
+      </div>
+      <div class="rc-b">
+        <div class="ts" id="textStats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== SIMULATED DATA (from rubic偏好 dataset, after visibleRule filtering) =====
+const CONFIG_NAME = 'rubic修改前后偏好0515';
+const OPTS = [{label:'回复1更好',value:1},{label:'回复2更好',value:2},{label:'tie',value:3}];
+
+// Real distribution from the data
+const DIST = [
+  {label:'回复1更好', value:1, count:40, pct:'37.0'},
+  {label:'回复2更好', value:2, count:57, pct:'52.8'},
+  {label:'tie', value:3, count:11, pct:'10.2'}
+];
+const TOTAL = 108;
+
+// Multi-tagger data
+const NUM_TAGGERS = 3;
+const NUM_RECORDS = 36;
+const AGREE_COUNT = 12;
+const AGREE_RATE = '33.3';
+const KAPPA = 0.145;
+const KAPPA_LABEL = '0.145';
+const KAPPA_LEVEL = '极差';
+const KAPPA_COLOR = 'var(--red)';
+const KAPPA_PCT = Math.max(0, Math.min(100, (KAPPA + 0.1) * 90));
+const DISAGREE_COUNT = 24;
+
+// Per-tagger distribution
+const TAGGER_DIST = [
+  {id:'e5a7d724', counts:{1:15, 2:17, 3:4}, total:36},
+  {id:'022b159f', counts:{1:12, 2:21, 3:3}, total:36},
+  {id:'14c12100', counts:{1:13, 2:19, 3:4}, total:36}
+];
+
+// Disagreement types
+const DISAGREE_TYPES = [
+  {type:'回复1更好 vs 回复2更好', count:16, pct:'66.7'},
+  {type:'回复1更好 vs tie', count:4, pct:'16.7'},
+  {type:'回复2更好 vs tie', count:3, pct:'12.5'},
+  {type:'回复1更好 vs 回复2更好 vs tie', count:1, pct:'4.2'}
+];
+
+// Text field stats
+const TEXT_STATS = {nonEmpty: 94, avgLen: 18, maxLen: 52};
+
+// ===== RENDER =====
+function renderAll(){
+  const colors = ['var(--green)','var(--red)','var(--orange)'];
+
+  // Distribution stats
+  const distEl = document.getElementById('distStats');
+  distEl.innerHTML = DIST.map((d,i) =>
+    `<div class="sb"><div class="sv" style="color:${colors[i]}">${d.pct}%</div><div class="sl">${d.label}</div><div class="ss">${d.count} 条</div></div>`
+  ).join('') + `<div class="sb"><div class="sv">${TOTAL}</div><div class="sl">总计</div></div>`;
+
+  // Multi-tagger badge
+  document.getElementById('mtBadge').textContent = `${NUM_TAGGERS} 位标注员 · ${NUM_RECORDS} 条数据`;
+
+  // MT stats
+  const mtEl = document.getElementById('mtStats');
+  mtEl.innerHTML = `
+    <div class="mt-stat"><div class="mt-sv" style="color:var(--green)">${AGREE_RATE}%</div><div class="mt-sl">完全一致率</div></div>
+    <div class="mt-stat"><div class="mt-sv" style="color:${KAPPA_COLOR}">${KAPPA_LABEL}</div><div class="mt-sl">Fleiss' Kappa · ${KAPPA_LEVEL}</div></div>
+    <div class="mt-stat"><div class="mt-sv" style="color:var(--orange)">${DISAGREE_COUNT}</div><div class="mt-sl">有分歧数据</div></div>
+  `;
+
+  // Kappa bar
+  document.getElementById('kappaBar').innerHTML =
+    `<div style="font-size:11px;color:var(--t2);margin-bottom:12px">Fleiss' Kappa：<span class="kappa-bar"><span class="kappa-fill" style="width:${KAPPA_PCT}%;background:${KAPPA_COLOR}"></span></span> <span style="color:${KAPPA_COLOR};font-weight:600">${KAPPA_LABEL}</span> <span style="color:var(--t3);font-size:10px">（<0.20 极差 / 0.21~0.40 一般 / 0.41~0.60 中等 / 0.61~0.80 较好 / >0.80 极好）</span></div>`;
+
+  // Tagger table
+  const tTable = document.getElementById('taggerTable');
+  let th = `<thead><tr><th>标注员</th><th>标注数</th>`;
+  OPTS.forEach(o => { th += `<th>${o.label}</th>` });
+  th += `</tr></thead><tbody>`;
+  TAGGER_DIST.forEach((t, i) => {
+    th += `<tr><td style="font-weight:500">标注员${i+1} <span style="color:var(--t3);font-size:10px">${t.id}</span></td><td>${t.total}</td>`;
+    OPTS.forEach(o => {
+      const cnt = t.counts[o.value] || 0;
+      const pct = (cnt / t.total * 100).toFixed(1);
+      th += `<td>${cnt} <span style="color:var(--t3);font-size:10px">(${pct}%)</span></td>`;
+    });
+    th += `</tr>`;
+  });
+  th += `</tbody>`;
+  tTable.innerHTML = th;
+
+  // Disagreement table
+  const dTable = document.getElementById('disagreeTable');
+  let dh = `<thead><tr><th>分歧类型</th><th>数量</th><th>占比</th></tr></thead><tbody>`;
+  DISAGREE_TYPES.forEach(d => {
+    dh += `<tr><td>${d.type}</td><td>${d.count}</td><td>${d.pct}%</td></tr>`;
+  });
+  dh += `</tbody>`;
+  dTable.innerHTML = dh;
+
+  // Text stats
+  document.getElementById('textStats').innerHTML = `
+    <div class="tc"><div class="tl">非空率</div><div class="tv" style="color:var(--blue)">${(TEXT_STATS.nonEmpty / TOTAL * 100).toFixed(1)}%</div></div>
+    <div class="tc"><div class="tl">平均字数</div><div class="tv" style="color:var(--green)">${TEXT_STATS.avgLen}</div></div>
+    <div class="tc"><div class="tl">最大字数</div><div class="tv" style="color:var(--orange)">${TEXT_STATS.maxLen}</div></div>
+  `;
+
+  // Charts
+  initCharts();
+}
+
+function initCharts(){
+  const ec = ['#00b894','#e17055','#fdcb6e'];
+  const data = DIST.map((d,i) => ({value:d.count, name:d.label, itemStyle:{color:ec[i]}}));
+
+  // Pie
+  const pie = echarts.init(document.getElementById('pie_0'), 'dark');
+  pie.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},
+    series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],
+      itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},
+      label:{color:'#e4e6ed',fontSize:11},data}]
+  });
+
+  // Bar
+  const bar = echarts.init(document.getElementById('bar_0'), 'dark');
+  bar.setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis'},
+    grid:{left:50,right:20,top:25,bottom:30},
+    xAxis:{type:'category',data:DIST.map(d=>d.label),axisLabel:{color:'#8b8fa3',fontSize:11},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+    yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+    series:[{type:'bar',barWidth:40,itemStyle:{borderRadius:[4,4,0,0]},data,
+      label:{show:true,position:'top',color:'#e4e6ed',fontSize:11,fontWeight:600}}]
+  });
+
+  window.addEventListener('resize', () => { pie.resize(); bar.resize(); });
+}
+
+// ===== EXPORT: PNG =====
+async function exportPNG(){
+  const btn = document.getElementById('btnPNG');
+  btn.classList.add('exporting');
+  btn.textContent = '⏳ 生成中...';
+
+  try {
+    // Hide export buttons during capture
+    const exportBar = document.querySelector('.export-bar');
+    exportBar.style.display = 'none';
+
+    const el = document.getElementById('exportArea');
+    const canvas = await html2canvas(el, {
+      backgroundColor: '#0f1117',
+      scale: 2,  // 2x for retina clarity
+      useCORS: true,
+      logging: false,
+      // Ensure charts are captured
+      onclone: (doc) => {
+        // Force chart canvases to be visible in clone
+        const charts = doc.querySelectorAll('canvas');
+        charts.forEach(c => { c.style.display = 'block'; });
+      }
+    });
+
+    // Restore export buttons
+    exportBar.style.display = '';
+
+    // Download
+    const link = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    link.download = `${CONFIG_NAME}_分析结果_${date}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast('✅ PNG 已下载');
+  } catch(e) {
+    console.error(e);
+    showToast('❌ 导出失败: ' + e.message);
+    document.querySelector('.export-bar').style.display = '';
+  }
+
+  btn.classList.remove('exporting');
+  btn.textContent = '📷 导出 PNG';
+}
+
+// ===== EXPORT: CSV =====
+function exportCSV(){
+  const rows = [];
+
+  // Header
+  rows.push(['字段名','类型','选项值','选项标签','数量','百分比','总计'].join(','));
+
+  // Distribution data
+  DIST.forEach(d => {
+    rows.push([
+      `"排序"`, `"radio"`, d.value, `"${d.label}"`, d.count, `${d.pct}%`, TOTAL
+    ].join(','));
+  });
+
+  rows.push('');
+  rows.push(['# 文本字段统计'].join(','));
+  rows.push(['字段名','类型','非空数','非空率','平均字数','最大字数'].join(','));
+  rows.push([
+    `"原因"`, `"textarea_auto_height"`, TEXT_STATS.nonEmpty,
+    `${(TEXT_STATS.nonEmpty/TOTAL*100).toFixed(1)}%`, TEXT_STATS.avgLen, TEXT_STATS.maxLen
+  ].join(','));
+
+  rows.push('');
+  rows.push(['# 多人标注一致性'].join(','));
+  rows.push(['字段名','标注员数','数据条数','完全一致率','Kappa值','Kappa等级'].join(','));
+  rows.push([
+    `"排序"`, NUM_TAGGERS, NUM_RECORDS, `${AGREE_RATE}%`, KAPPA_LABEL, `"${KAPPA_LEVEL}"`
+  ].join(','));
+
+  rows.push('');
+  rows.push(['# 各标注员分布'].join(','));
+  const tHeader = ['标注员','标注数', ...OPTS.map(o => `"${o.label}"`)];
+  rows.push(tHeader.join(','));
+  TAGGER_DIST.forEach((t, i) => {
+    const row = [`"标注员${i+1} (${t.id})"`, t.total];
+    OPTS.forEach(o => {
+      const cnt = t.counts[o.value] || 0;
+      row.push(`${cnt} (${(cnt/t.total*100).toFixed(1)}%)`);
+    });
+    rows.push(row.join(','));
+  });
+
+  rows.push('');
+  rows.push(['# 分歧类型分布'].join(','));
+  rows.push(['分歧类型','数量','占比'].join(','));
+  DISAGREE_TYPES.forEach(d => {
+    rows.push([`"${d.type}"`, d.count, `${d.pct}%`].join(','));
+  });
+
+  // BOM for Excel Chinese support
+  const bom = '\uFEFF';
+  const csv = bom + rows.join('\n');
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8'});
+  const link = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  link.download = `${CONFIG_NAME}_统计数据_${date}.csv`;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  URL.revokeObjectURL(link.href);
+
+  showToast('✅ CSV 已下载');
+}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast success';
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+renderAll();
+</script>
+</body>
+</html>

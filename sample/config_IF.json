@@ -1,0 +1,191 @@
+{
+  "id": "01K9F9WTRRQ5TZWKJWD0DZXYV2",
+  "name": "指令遵循评测集标注-偏好判断-annot",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "R1checklist_judge",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "遵循",
+            "value": 1
+          },
+          {
+            "label": "不遵循",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "回复1检查项遵循判定",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "R1_note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "回复1-note",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "R2checklist_judge",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "遵循",
+            "value": 1
+          },
+          {
+            "label": "不遵循",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "回复2检查项遵循判定",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "R2_note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "回复2-note",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "preference",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": -1
+          },
+          {
+            "label": "无偏好",
+            "value": 0
+          },
+          {
+            "label": "回复2更好",
+            "value": 1
+          },
+          {
+            "label": "跳过",
+            "value": -2
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "整体指令遵循偏好",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "preference_note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea"
+    }
+  ]
+}

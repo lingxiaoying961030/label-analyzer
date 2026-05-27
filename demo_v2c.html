@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Analyzer - 方案C：手风琴折叠</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#0f1117;--surface:#161923;--s2:#1c1f2e;--sh:rgba(108,92,231,0.06);--border:#282d3e;--bl:#333849;--text:#e4e6ed;--t2:#8b8fa3;--t3:#5a5e72;--accent:#6c5ce7;--al:#a29bfe;--green:#00b894;--red:#e17055;--orange:#fdcb6e;--blue:#74b9ff;--cyan:#00cec9;--R:10px;--r:6px}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  .topbar{height:50px;padding:0 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0;background:var(--surface)}
+  .topbar .logo{font-size:16px;font-weight:700;background:linear-gradient(135deg,var(--al),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .topbar .sub{font-size:12px;color:var(--t2)}
+  .main{flex:1;display:flex;overflow:hidden}
+  .sidebar{width:320px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface);flex-shrink:0}
+  .sb-scroll{flex:1;overflow-y:auto}
+  .sb-scroll::-webkit-scrollbar{width:4px}
+  .sb-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  .sb-foot{padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+  /* Upload area in sidebar */
+  .up-area{padding:14px 16px;border-bottom:1px solid var(--border);background:rgba(22,25,35,.8)}
+  .up-area .ua-title{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+  .up-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
+  .up-row .dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+  .up-row .fname{color:var(--green);font-weight:500}
+  .cfg-sel{width:100%;padding:6px 10px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:var(--r);font-size:11px;font-family:inherit;margin-top:6px;cursor:pointer;outline:none}
+  .cfg-sel:focus{border-color:var(--accent)}
+  /* Accordion */
+  .acc{border-bottom:1px solid rgba(40,45,62,.6)}
+  .acc-hd{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;user-select:none;transition:.15s}
+  .acc-hd:hover{background:rgba(255,255,255,.02)}
+  .acc-chev{font-size:10px;color:var(--t3);transition:transform .2s;width:14px;text-align:center;flex-shrink:0}
+  .acc-chev.open{transform:rotate(90deg)}
+  .acc-icon{font-size:15px;flex-shrink:0}
+  .acc-info{flex:1}
+  .acc-title{font-size:13px;font-weight:500}
+  .acc-meta{font-size:10px;color:var(--t3);margin-top:1px}
+  .acc-badge{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500}
+  .acc-badge.radio{background:rgba(108,92,231,.12);color:var(--al)}
+  .acc-badge.checkbox{background:rgba(108,92,231,.12);color:var(--al)}
+  .acc-badge.textarea{background:rgba(0,184,148,.12);color:var(--green)}
+  .acc-badge.depend{background:rgba(116,185,255,.12);color:var(--blue)}
+  .acc-badge.form_list{background:rgba(253,203,110,.12);color:var(--orange)}
+  .acc-badge.text_label{background:rgba(0,206,201,.12);color:var(--cyan)}
+  .acc-badge.other{background:rgba(99,110,114,.12);color:#aaa}
+  .acc-sel{font-size:10px;color:var(--al);background:var(--sh);padding:1px 6px;border-radius:3px}
+  .acc-bd{overflow:hidden;transition:max-height .25s ease}
+  .acc-inner{padding:0 16px 8px 40px}
+  .si{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--r);cursor:pointer;transition:.12s;margin-bottom:2px}
+  .si:hover{background:rgba(255,255,255,.02)}
+  .si.ck-on{background:var(--sh)}
+  .ck{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--bl);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;transition:.12s}
+  .ck.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .si-info{flex:1}
+  .si-name{font-size:12px}
+  .si-meta{font-size:10px;color:var(--t3);margin-top:1px}
+  .btn-a{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px}
+  .btn-a:hover{background:#5b4bd5}
+  .btn-a:disabled{opacity:.35;cursor:not-allowed}
+  .si-info2{text-align:center;font-size:11px;color:var(--t2);margin-top:6px}
+  .content{flex:1;overflow-y:auto;padding:24px;background:var(--bg)}
+  .content::-webkit-scrollbar{width:6px}
+  .content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:12px}
+  .empty .ei{font-size:52px;opacity:.25}
+  .rc{background:var(--surface);border-radius:var(--R);border:1px solid var(--border);margin-bottom:16px;overflow:hidden}
+  .rc-h{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .rc-h h3{font-size:15px;font-weight:600;flex:1}
+  .rc-h .tag{font-size:10px;padding:2px 7px;border-radius:3px}
+  .rc-b{padding:16px 20px}
+  .sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px}
+  .sb{background:var(--bg);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--border)}
+  .sv{font-size:22px;font-weight:700;line-height:1.2}
+  .sl{font-size:10px;color:var(--t2);margin-top:2px}
+  .ss{font-size:9px;color:var(--t3);margin-top:1px}
+  .cr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+  .cb{background:var(--bg);border-radius:var(--r);border:1px solid var(--border);height:260px}
+  .ft{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}
+  .ft th{text-align:left;padding:6px 10px;color:var(--t2);border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+  .ft td{padding:6px 10px;border-bottom:1px solid rgba(40,45,62,.4)}
+  .ts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tc{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+  .tl{font-size:11px;color:var(--t2);margin-bottom:4px}
+  .tv{font-size:20px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">Label Analyzer</span>
+  <span class="sub">方案C — 手风琴折叠</span>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="up-area">
+      <div class="ua-title">已加载文件</div>
+      <div class="up-row"><span class="dot"></span><span class="fname" id="cfgName">config_numcount.json</span></div>
+      <div class="up-row"><span class="dot"></span><span class="fname">2 个 JSONL · 18,432 条</span></div>
+      <select class="cfg-sel" id="cfgSel" onchange="switchCfg(this.value)"></select>
+    </div>
+    <div class="sb-scroll" id="sbContent"></div>
+    <div class="sb-foot">
+      <button class="btn-a" id="btnA" onclick="run()" disabled>🚀 开始分析</button>
+      <div class="si-info2" id="selInfo">请展开控件选择字段</div>
+    </div>
+  </div>
+  <div class="content" id="contentArea">
+    <div class="empty" id="emptyS"><div class="ei">📊</div><div style="font-size:15px">在左侧选择字段开始分析</div><div style="font-size:12px">展开控件 → 勾选子字段 → 点击"开始分析"</div></div>
+    <div id="results" style="display:none"></div>
+  </div>
+</div>
+<script>
+const ALL_CONFIGS = {
+  "config_numcount":{name:"指令遵循评测集v3-数量统计annotate",file:"config_numcount.json",fields:[{dataIndex:"compliance",title:"遵循判断",valueType:"depend",subFields:[{title:"检查项合理性判断",valueType:"radio",options:[{label:"合理",value:0},{label:"不合理",value:1}]},{title:"回复1检查项遵循判断",valueType:"radio",options:[{label:"遵循",value:0},{label:"不遵循",value:1}]},{title:"回复2检查项遵循判断",valueType:"radio",options:[{label:"遵循",value:0},{label:"不遵循",value:1}]}]},{dataIndex:"quantity",title:"数量统计",valueType:"form_list",subFields:[{title:"计数目标",valueType:"textarea"},{title:"回复1要求数量",valueType:"text"},{title:"回复2要求数量",valueType:"text"},{title:"回复1实际数量",valueType:"text"},{title:"回复2实际数量",valueType:"text"}]},{dataIndex:"Note",title:"笔记",valueType:"textarea",subFields:[]}]},
+  "config_logic":{name:"内部逻辑判定_annotate",file:"config_logic.json",fields:[{dataIndex:"response_conflict",title:"内部逻辑判断",valueType:"text_label",subFields:[{title:"回复逻辑错误",valueType:"tag",options:[]},{title:"judgement判断",valueType:"tag",options:[]}]},{dataIndex:"judgment_quality",title:"judgment质量判定",valueType:"checkbox",options:[{label:"judgment分析无误",value:0},{label:"judgment分析错误",value:1},{label:"judgment分析遗漏",value:2}],subFields:[]},{dataIndex:"Note",title:"笔记",valueType:"textarea_auto_height",subFields:[]}]},
+  "config_IF":{name:"指令遵循评测集标注-偏好判断-annot",file:"config_IF.json",fields:[{dataIndex:"res1_compliance",title:"回复1检查项遵循判定",valueType:"radio",options:[{label:"遵循",value:0},{label:"不遵循",value:1}],subFields:[]},{dataIndex:"res1_note",title:"回复1-note",valueType:"textarea",subFields:[]},{dataIndex:"res2_compliance",title:"回复2检查项遵循判定",valueType:"radio",options:[{label:"遵循",value:0},{label:"不遵循",value:1}],subFields:[]},{dataIndex:"res2_note",title:"回复2-note",valueType:"textarea",subFields:[]},{dataIndex:"overall_preference",title:"整体指令遵循偏好",valueType:"radio",options:[{label:"回复1更好",value:0},{label:"无偏好",value:1},{label:"回复2更好",value:2},{label:"跳过",value:3}],subFields:[]},{dataIndex:"Note",title:"笔记",valueType:"textarea",subFields:[]}]},
+  "config_artifact":{name:"搭子artifacts美观度筛选",file:"config_artifact.json",fields:[{dataIndex:"combined",title:"组合标注",valueType:"depend",subFields:[{title:"是否存在明显bug",valueType:"radio",options:[{label:"是",value:1},{label:"否",value:0}]},{title:"页面美观度（静态）",valueType:"radio",options:[{label:"1分-很差",value:1},{label:"2分-较差",value:2},{label:"3分-一般",value:3},{label:"4分-较好",value:4},{label:"5分-很好",value:5}]},{title:"页面美观度（交互/动态）",valueType:"radio",options:[{label:"1分-很差",value:1},{label:"2分-较差",value:2},{label:"3分-一般",value:3},{label:"4分-较好",value:4},{label:"5分-很好",value:5}]}]}]},
+  "config_judgementV2":{name:"judgement_V2_annotate",file:"config_judgementV2.json",fields:[{dataIndex:"response_error",title:"response是否存在错误",valueType:"radio",options:[{label:"是",value:1},{label:"否",value:0}],subFields:[]},{dataIndex:"judgement_edit",title:"judgement判定和修改",valueType:"depend",subFields:[{title:"judgement质量判定",valueType:"radio",options:[{label:"正确",value:0},{label:"错误",value:1}]},{title:"judgement修改",valueType:"draggable_md_editor",options:[]}]},{dataIndex:"Note",title:"笔记",valueType:"textarea_auto_height",subFields:[]},{dataIndex:"ref_links",title:"参考链接",valueType:"editable_link",subFields:[]}]},
+  "config_体感测":{name:"20260104-标注员体感测-修bug",file:"config_体感测.json",fields:[{dataIndex:"model1_good",title:"model1的好note",valueType:"textarea",subFields:[]},{dataIndex:"model1_bad",title:"model1_坏note",valueType:"textarea",subFields:[]},{dataIndex:"model2_good",title:"model2的好note",valueType:"textarea",subFields:[]},{dataIndex:"model2_bad",title:"model2的坏note",valueType:"textarea",subFields:[]},{dataIndex:"preference",title:"偏好",valueType:"radio",options:[{label:"model1更好",value:0},{label:"model2更好",value:1},{label:"差不多",value:2},{label:"都很差",value:3},{label:"模型有异常，跳过这轮评测",value:4}],subFields:[]}]},
+  "config_学科":{name:"学科感知code修改",file:"config_学科.json",fields:[{dataIndex:"judge",title:"判断是否一致",valueType:"depend",subFields:[{title:"是否需要跳过",valueType:"radio",options:[{label:"是",value:0},{label:"否",value:1}]},{title:"是否正确",valueType:"radio",options:[{label:"是",value:1},{label:"否",value:0}],dependency:"当是否需要跳过=否时显示"},{title:"修改后的图片生成代码",valueType:"draggable_md_editor",dependency:"当是否正确=否时显示"}]},{dataIndex:"screenshot",title:"修改后的图片",valueType:"screenshot",subFields:[]},{dataIndex:"Note",title:"笔记",valueType:"textarea",subFields:[]}]},
+  "config_搜索偏好":{name:"搜索偏好0429",file:"config_搜索偏好.json",fields:[{dataIndex:"unable_to_judge",title:"无法判断",valueType:"depend",subFields:[{title:"无法判断",valueType:"radio",options:[{label:"是",value:1},{label:"否",value:0}]},{title:"理由",valueType:"textarea",dependency:"当无法判断=是时显示"}]},{dataIndex:"ranking",title:"排序",valueType:"responses_ranking",subFields:[]},{dataIndex:"Note",title:"笔记",valueType:"textarea_auto_height",subFields:[]},{dataIndex:"rubric1",title:"rubric分析（回复1）",valueType:"textarea_auto_height",subFields:[]},{dataIndex:"rubric2",title:"rubric分析（回复2）",valueType:"textarea_auto_height",subFields:[]},{dataIndex:"rubric3",title:"rubric分析（回复3）",valueType:"textarea_auto_height",subFields:[]}]}
+};
+const TI={radio:'🔘',checkbox:'☑️',textarea:'📝',textarea_auto_height:'📝',depend:'🔗',form_list:'📋',text_label:'🏷️',text:'📝',screenshot:'📎',editable_link:'🔗',responses_ranking:'📊',draggable_md_editor:'📝',tag:'🏷️'};
+const TL={radio:'单选',checkbox:'多选',textarea:'文本框',textarea_auto_height:'文本框',depend:'组合控件',form_list:'表单列表',text_label:'文本标注',text:'文本',screenshot:'截图上传',editable_link:'可编辑链接',responses_ranking:'排序控件',draggable_md_editor:'MD编辑器',tag:'标签'};
+const TC=v=>{if(['radio','checkbox'].includes(v))return'radio';if(v.startsWith('textarea')||v==='text'||v==='draggable_md_editor')return'textarea';if(v==='depend')return'depend';if(v==='form_list')return'form_list';if(v==='text_label'||v==='tag')return'text_label';return'other'};
+const GR=f=>{const v=f.valueType;if(['radio','checkbox'].includes(v))return'd';if(v.startsWith('textarea')||v==='text'||v==='draggable_md_editor')return't';if(v==='text_label')return'a';return'o'};
+
+let cur='config_numcount',openP=new Set([0]),sel=new Set(),charts=[];
+
+function initSel(){const s=document.getElementById('cfgSel');s.innerHTML='';for(const[k,c]of Object.entries(ALL_CONFIGS)){const o=document.createElement('option');o.value=k;o.textContent=c.name;s.appendChild(o)}s.value=cur}
+
+function switchCfg(k){cur=k;openP.clear();openP.add(0);sel.clear();document.getElementById('cfgName').textContent=ALL_CONFIGS[k].file;document.getElementById('results').style.display='none';document.getElementById('emptyS').style.display='';render()}
+
+function render(){
+  const cfg=ALL_CONFIGS[cur];const el=document.getElementById('sbContent');let h='';
+  cfg.fields.forEach((f,fi)=>{
+    const hasSub=f.subFields&&f.subFields.length>0;const isOpen=openP.has(fi);
+    let selCnt=0;if(hasSub)f.subFields.forEach((_,si)=>{if(sel.has(`${fi}.${si}`))selCnt++});else if(sel.has(`${fi}`))selCnt=1;
+    h+=`<div class="acc"><div class="acc-hd" onclick="${hasSub?`tp(${fi})`:`tl(${fi})`}">`;
+    if(hasSub)h+=`<span class="acc-chev ${isOpen?'open':''}">▶</span>`;
+    else{const ck=sel.has(`${fi}`);h+=`<span class="ck ${ck?'on':''}">${ck?'✓':''}</span>`}
+    h+=`<span class="acc-icon">${TI[f.valueType]||'📄'}</span><div class="acc-info"><div class="acc-title">${f.title}</div><div class="acc-meta">${TL[f.valueType]||f.valueType}${hasSub?` · ${f.subFields.length}个子字段`:''}</div></div>
+      <span class="acc-badge ${TC(f.valueType)}">${TL[f.valueType]||f.valueType}</span>`;
+    if(selCnt)h+=`<span class="acc-sel">${selCnt}✓</span>`;
+    h+=`</div>`;
+    if(hasSub){const maxH=isOpen?(f.subFields.length*42+16):0;h+=`<div class="acc-bd" style="max-height:${maxH}px"><div class="acc-inner">`;
+      f.subFields.forEach((sf,si)=>{const k=`${fi}.${si}`;const ck=sel.has(k);
+        let meta=TL[sf.valueType]||sf.valueType;if(sf.options&&sf.options.length)meta+=` · ${sf.options.length}选项`;if(sf.dependency)meta+=` · ${sf.dependency}`;
+        h+=`<div class="si${ck?' ck-on':''}" onclick="event.stopPropagation();ts('${k}')"><span class="ck ${ck?'on':''}">${ck?'✓':''}</span><div class="si-info"><div class="si-name">${sf.title}</div><div class="si-meta">${meta}</div></div></div>`});
+      h+=`</div></div>`}
+    h+=`</div>`});
+  el.innerHTML=h;updI()}
+
+function tp(fi){openP.has(fi)?openP.delete(fi):openP.add(fi);render()}
+function tl(fi){const k=`${fi}`;sel.has(k)?sel.delete(k):sel.add(k);render()}
+function ts(k){sel.has(k)?sel.delete(k):sel.add(k);render()}
+function updI(){const n=sel.size;document.getElementById('selInfo').textContent=n?`已选 ${n} 个字段`:'请展开控件选择字段';document.getElementById('btnA').disabled=!n}
+
+function gfk(key){const[fi,si]=key.split('.').map(Number);const f=ALL_CONFIGS[cur].fields[fi];if(isNaN(si))return{...f,pt:null};return{...f.subFields[si],pt:f.title,pv:f.valueType}}
+
+function run(){
+  if(!sel.size)return;charts.forEach(c=>c.dispose());charts=[];
+  const c=document.getElementById('results');c.innerHTML='';c.style.display='';document.getElementById('emptyS').style.display='none';
+  let ci=0;[...sel].sort().forEach(k=>{const f=gfk(k);const g=GR(f);
+    if(g==='d'){c.innerHTML+=rdist(f,ci);ci++}else if(g==='t'){c.innerHTML+=rtext(f)}else if(g==='a'){c.innerHTML+=ranno(f,ci);ci++}else{c.innerHTML+=rother(f)}});
+  setTimeout(()=>{ci=0;[...sel].sort().forEach(k=>{const f=gfk(k);const g=GR(f);if(g==='d'){icharts(f,ci);ci++}else if(g==='a'){ianno(f,ci);ci++}})},80)}
+
+function rdist(f,ci){const opts=f.options||[{label:'A',value:0},{label:'B',value:1}];const t=f.pt?`${f.pt} › ${f.title}`:f.title;const total=18432;const colors=['var(--green)','var(--red)','var(--orange)','var(--al)','var(--blue)','var(--cyan)'];const sim=opts.map((o,i)=>({...o,count:Math.round(total*(i===0?60+Math.random()*18:3+Math.random()*14)/100),color:colors[i%colors.length]}));const sum=sim.reduce((a,b)=>a+b.count,0);sim.forEach(d=>d.pct=(d.count/sum*100).toFixed(1));
+  return`<div class="rc"><div class="rc-h"><h3>${t}</h3><span class="tag" style="background:rgba(108,92,231,.12);color:var(--al)">${TL[f.valueType]||f.valueType}</span></div><div class="rc-b"><div class="sr">${sim.map(d=>`<div class="sb"><div class="sv" style="color:${d.color}">${d.pct}%</div><div class="sl">${d.label}</div><div class="ss">${d.count.toLocaleString()}</div></div>`).join('')}<div class="sb"><div class="sv">${sum.toLocaleString()}</div><div class="sl">总计</div></div></div><div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div><table class="ft"><thead><tr><th>文件</th>${opts.map(o=>`<th>${o.label}</th>`).join('')}</tr></thead><tbody><tr><td>batch_5.6-5.9.jsonl</td>${sim.map(d=>`<td>${d.pct}%</td>`).join('')}</tr><tr><td>batch_4.21-4.30.jsonl</td>${sim.map(d=>`<td>${(parseFloat(d.pct)+(Math.random()-.5)*3).toFixed(1)}%</td>`).join('')}</tr></tbody></table></div></div>`}
+
+function icharts(f,ci){const opts=f.options||[{label:'A',value:0},{label:'B',value:1}];const ec=['#00b894','#e17055','#fdcb6e','#a29bfe','#74b9ff','#00cec9'];const data=opts.map((o,i)=>({value:i===0?12000:1500+Math.round(Math.random()*3000),name:o.label,itemStyle:{color:ec[i%ec.length]}}));
+  const pe=document.getElementById(`pie_${ci}`);if(pe){const p=echarts.init(pe,'dark');p.setOption({backgroundColor:'transparent',tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},label:{color:'#e4e6ed',fontSize:11},data}]});charts.push(p)}
+  const be=document.getElementById(`bar_${ci}`);if(be){const b=echarts.init(be,'dark');b.setOption({backgroundColor:'transparent',tooltip:{trigger:'axis'},grid:{left:50,right:20,top:25,bottom:30},xAxis:{type:'category',data:opts.map(o=>o.label),axisLabel:{color:'#8b8fa3',fontSize:11,rotate:opts.length>4?20:0},axisLine:{lineStyle:{color:'#2a2e3d'}}},yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},series:[{type:'bar',barWidth:Math.min(40,160/opts.length),itemStyle:{borderRadius:[4,4,0,0]},data,label:{show:true,position:'top',color:'#e4e6ed',fontSize:11,fontWeight:600}}]});charts.push(b)}}
+
+function rtext(f){const t=f.pt?`${f.pt} › ${f.title}`:f.title;const ne=Math.round(18432*(.2+Math.random()*.3));return`<div class="rc"><div class="rc-h"><h3>${t}</h3><span class="tag" style="background:rgba(0,184,148,.12);color:var(--green)">${TL[f.valueType]||f.valueType}</span></div><div class="rc-b"><div class="ts"><div class="tc"><div class="tl">非空率</div><div class="tv" style="color:var(--blue)">${(ne/18432*100).toFixed(1)}%</div></div><div class="tc"><div class="tl">平均字数</div><div class="tv" style="color:var(--green)">${Math.round(25+Math.random()*60)}</div></div><div class="tc"><div class="tl">最大字数</div><div class="tv" style="color:var(--orange)">${Math.round(100+Math.random()*300)}</div></div></div></div></div>`}
+
+function ranno(f,ci){const t=f.pt?`${f.pt} › ${f.title}`:f.title;return`<div class="rc"><div class="rc-h"><h3>${t}</h3><span class="tag" style="background:rgba(0,206,201,.12);color:var(--cyan)">文本标注</span></div><div class="rc-b"><div class="sr"><div class="sb"><div class="sv">18,432</div><div class="sl">总记录</div></div><div class="sb"><div class="sv" style="color:var(--blue)">4,521</div><div class="sl">有标注</div></div><div class="sb"><div class="sv" style="color:var(--green)">24.5%</div><div class="sl">覆盖率</div></div></div><div class="cr"><div class="cb" id="pie_${ci}"></div><div class="cb" id="bar_${ci}"></div></div></div></div>`}
+function ianno(f,ci){const tags=f.subFields?.filter(s=>s.valueType==='tag')||[];const names=tags.length?tags.map(t=>t.title):['标签A','标签B'];const ec=['#74b9ff','#e17055','#fdcb6e','#a29bfe','#00cec9'];const data=names.map((n,i)=>({value:2000+Math.round(Math.random()*5000),name:n,itemStyle:{color:ec[i%ec.length]}}));
+  const pe=document.getElementById(`pie_${ci}`);if(pe){const p=echarts.init(pe,'dark');p.setOption({backgroundColor:'transparent',tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},series:[{type:'pie',radius:['36%','66%'],center:['50%','54%'],itemStyle:{borderRadius:4,borderColor:'#161923',borderWidth:2},label:{color:'#e4e6ed',fontSize:11},data}]});charts.push(p)}
+  const be=document.getElementById(`bar_${ci}`);if(be){const b=echarts.init(be,'dark');b.setOption({backgroundColor:'transparent',tooltip:{trigger:'axis'},grid:{left:50,right:20,top:25,bottom:30},xAxis:{type:'category',data:names,axisLabel:{color:'#8b8fa3',fontSize:11},axisLine:{lineStyle:{color:'#2a2e3d'}}},yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},series:[{type:'bar',barWidth:40,itemStyle:{borderRadius:[4,4,0,0]},data,label:{show:true,position:'top',color:'#e4e6ed',fontSize:11,fontWeight:600}}]});charts.push(b)}}
+
+function rother(f){const t=f.pt?`${f.pt} › ${f.title}`:f.title;let ex='';
+  if(f.valueType==='form_list')ex='<div class="ts" style="margin-top:8px"><div class="tc"><div class="tl">平均条目</div><div class="tv" style="color:var(--orange)">3.2</div></div><div class="tc"><div class="tl">最大条目</div><div class="tv" style="color:var(--red)">12</div></div><div class="tc"><div class="tl">非空率</div><div class="tv" style="color:var(--green)">92.1%</div></div></div>';
+  else if(f.valueType==='responses_ranking')ex='<div class="ts" style="margin-top:8px"><div class="tc"><div class="tl">最常排第1</div><div class="tv" style="color:var(--green)">response2</div></div><div class="tc"><div class="tl">最常排末位</div><div class="tv" style="color:var(--red)">response3</div></div><div class="tc"><div class="tl">已排序率</div><div class="tv" style="color:var(--blue)">97.8%</div></div></div>';
+  else if(f.valueType==='screenshot')ex='<div class="ts" style="margin-top:8px"><div class="tc"><div class="tl">已上传</div><div class="tv" style="color:var(--blue)">8,724</div></div><div class="tc"><div class="tl">上传率</div><div class="tv" style="color:var(--green)">47.3%</div></div><div class="tc"><div class="tl">平均截图</div><div class="tv" style="color:var(--orange)">1.2</div></div></div>';
+  return`<div class="rc"><div class="rc-h"><h3>${t}</h3><span class="tag" style="background:rgba(253,203,110,.12);color:var(--orange)">${TL[f.valueType]||f.valueType}</span></div><div class="rc-b"><div class="sr"><div class="sb"><div class="sv">18,432</div><div class="sl">总记录</div></div><div class="sb"><div class="sv" style="color:var(--green)">89.4%</div><div class="sl">非空率</div></div></div>${ex}</div></div>`}
+
+window.addEventListener('resize',()=>charts.forEach(c=>c.resize()));
+initSel();render();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+{
+  "id": "01KG4J8G9HW7QXT48KTDJ357GN",
+  "name": "学科感知code修改",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "is_skip",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "是",
+                  "value": 0
+                },
+                {
+                  "label": "否",
+                  "value": 1
+                }
+              ],
+              "required": true,
+              "title": "是否需要跳过",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "is_correct",
+              "dependency": [
+                {
+                  "dataIndex": "is_skip",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "是",
+                  "value": 1
+                },
+                {
+                  "label": "否",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "是否正确",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "reply_fix",
+              "dependency": [
+                {
+                  "dataIndex": "is_correct",
+                  "operator": "eq",
+                  "value": 0
+                }
+              ],
+              "dependencyType": "and",
+              "required": true,
+              "title": "修改后的图片生成代码",
+              "tooltip": "",
+              "valueType": "draggable_md_editor"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "judge",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "判断是否一致",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "Picture",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "修改后的图片",
+      "valueType": "screenshot"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea"
+    }
+  ]
+}

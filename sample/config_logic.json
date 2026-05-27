@@ -1,0 +1,149 @@
+{
+  "id": "01KP4YVD1N9VSNTCRNNSJYH0FS",
+  "name": "内部逻辑判定_annotate",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "note_conflict",
+                      "formItemProps": {
+                        "rules": [
+                          {
+                            "required": true
+                          }
+                        ]
+                      },
+                      "title": "笔记",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "conflict",
+              "shortcut": {
+                "key": "1"
+              },
+              "title": "回复逻辑错误",
+              "tooltip": "#f55033"
+            },
+            {
+              "columns": [
+                {
+                  "columns": [
+                    {
+                      "dataIndex": "note_judgement",
+                      "formItemProps": {
+                        "rules": [
+                          {
+                            "required": true
+                          }
+                        ]
+                      },
+                      "title": "笔记",
+                      "valueType": "textarea"
+                    }
+                  ]
+                }
+              ],
+              "dataIndex": "judgement",
+              "shortcut": {
+                "key": "2"
+              },
+              "title": "judgement判断",
+              "tooltip": "#9876ff"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "response_conflict",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "请检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "内部逻辑判断",
+      "valueType": "text_label"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "judgment_quality",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "judgment分析无误",
+            "value": 0
+          },
+          {
+            "label": "judgment分析错误",
+            "value": 1
+          },
+          {
+            "label": "judgment分析遗漏",
+            "value": 2
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "judgment质量判定",
+      "valueType": "checkbox"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "Note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea_auto_height"
+    }
+  ]
+}

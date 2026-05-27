@@ -1,0 +1,496 @@
+{
+  "id": "01K9W0C625WBYMZCMDP5A34B0A",
+  "name": "RL人工评测-20251112-annotate标注",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "consistency",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "res_1、res_2均不存在",
+                  "value": 1
+                },
+                {
+                  "label": "res_1存在，res_2不存在",
+                  "value": 2
+                },
+                {
+                  "label": "res_1不存在，res_2存在",
+                  "value": 3
+                },
+                {
+                  "label": "res_1、res_2均存在",
+                  "value": 4
+                }
+              ],
+              "required": true,
+              "title": "是否存在未完成的指令要求",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "consistency_preference",
+              "dependency": [
+                {
+                  "dataIndex": "consistency",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "consistency",
+                  "operator": "eq",
+                  "value": 4
+                }
+              ],
+              "dependencyType": "or",
+              "options": [
+                {
+                  "label": "回复1更好",
+                  "value": 1
+                },
+                {
+                  "label": "回复2更好",
+                  "value": 2
+                },
+                {
+                  "label": "无偏好",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "指令遵循偏好",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "note",
+              "dependency": [],
+              "dependencyType": "and",
+              "required": false,
+              "title": "笔记",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "instruction_follow",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "指令遵循",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "factual_wrong",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "res_1、res_2均不存在",
+                  "value": 1
+                },
+                {
+                  "label": "res_1存在，res_2不存在",
+                  "value": 2
+                },
+                {
+                  "label": "res_1不存在，res_2存在",
+                  "value": 3
+                },
+                {
+                  "label": "res_1、res_2均存在",
+                  "value": 4
+                }
+              ],
+              "required": true,
+              "title": "是否存在错误外部知识",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "factual_preference",
+              "dependency": [
+                {
+                  "dataIndex": "factual_wrong",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "factual_wrong",
+                  "operator": "eq",
+                  "value": 4
+                }
+              ],
+              "dependencyType": "or",
+              "options": [
+                {
+                  "label": "回复1更好",
+                  "value": 1
+                },
+                {
+                  "label": "回复2更好",
+                  "value": 2
+                },
+                {
+                  "label": "无偏好",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "事实性偏好",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "note",
+              "dependency": [],
+              "dependencyType": "and",
+              "required": false,
+              "title": "笔记",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "factual",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "外部知识",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "logic_wrong",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "res_1、res_2均不存在",
+                  "value": 1
+                },
+                {
+                  "label": "res_1存在，res_2不存在",
+                  "value": 2
+                },
+                {
+                  "label": "res_1不存在，res_2存在",
+                  "value": 3
+                },
+                {
+                  "label": "res_1、res_2均存在",
+                  "value": 4
+                }
+              ],
+              "required": true,
+              "title": "是否存在内部矛盾/逻辑错误",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "logic_preference",
+              "dependency": [
+                {
+                  "dataIndex": "logic_wrong",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "logic_wrong",
+                  "operator": "eq",
+                  "value": 4
+                }
+              ],
+              "dependencyType": "or",
+              "options": [
+                {
+                  "label": "回复1更好",
+                  "value": 1
+                },
+                {
+                  "label": "回复2更好",
+                  "value": 2
+                },
+                {
+                  "label": "无偏好",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "逻辑偏好",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "note",
+              "dependency": [],
+              "dependencyType": "and",
+              "required": false,
+              "title": "笔记",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "logic",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "矛盾和逻辑错误",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "fluency_wrong",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "res_1、res_2均不存在",
+                  "value": 1
+                },
+                {
+                  "label": "res_1存在，res_2不存在",
+                  "value": 2
+                },
+                {
+                  "label": "res_1不存在，res_2存在",
+                  "value": 3
+                },
+                {
+                  "label": "res_1、res_2均存在",
+                  "value": 4
+                }
+              ],
+              "required": true,
+              "title": "是否存在不必要/不恰当的语言混杂",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "fluency_preference",
+              "dependency": [
+                {
+                  "dataIndex": "fluency_wrong",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "fluency_wrong",
+                  "operator": "eq",
+                  "value": 4
+                }
+              ],
+              "dependencyType": "or",
+              "options": [
+                {
+                  "label": "回复1更好",
+                  "value": 1
+                },
+                {
+                  "label": "回复2更好",
+                  "value": 2
+                },
+                {
+                  "label": "无偏好",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "流畅性偏好",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "note",
+              "dependency": [],
+              "dependencyType": "and",
+              "required": false,
+              "title": "笔记",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "fluency",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "语言流畅性",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "other_wrong",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "res_1、res_2均不存在",
+                  "value": 1
+                },
+                {
+                  "label": "res_1存在，res_2不存在",
+                  "value": 2
+                },
+                {
+                  "label": "res_1不存在，res_2存在",
+                  "value": 3
+                },
+                {
+                  "label": "res_1、res_2均存在",
+                  "value": 4
+                }
+              ],
+              "required": true,
+              "title": "其他类型错误",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "other_preference",
+              "dependency": [
+                {
+                  "dataIndex": "other_wrong",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "other_wrong",
+                  "operator": "eq",
+                  "value": 4
+                }
+              ],
+              "dependencyType": "or",
+              "options": [
+                {
+                  "label": "回复1更好",
+                  "value": 1
+                },
+                {
+                  "label": "回复2更好",
+                  "value": 2
+                },
+                {
+                  "label": "无偏好",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "其他类型错误偏好",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "note",
+              "dependency": [],
+              "dependencyType": "and",
+              "required": false,
+              "title": "笔记",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "other",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "其他错误",
+      "valueType": "depend"
+    }
+  ]
+}

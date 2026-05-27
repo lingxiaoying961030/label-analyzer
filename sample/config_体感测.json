@@ -1,0 +1,151 @@
+{
+  "id": "01KFPXWXPEWTG6TXPYCJAQ0PB7",
+  "name": "20260104-标注员体感测-修bug",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "1-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "model1_goodnote",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "model1的好note",
+      "tooltip": "禁用ai。必评指令遵循和回复准确性。",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "1-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "model1_badnote",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "model1_坏note",
+      "tooltip": "禁用ai。必评指令遵循和回复准确性。",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "model2_goodnote",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "model2的好note",
+      "tooltip": "禁用ai。必评指令遵循和回复准确性。",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "model2_badnote",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "model2的坏note",
+      "tooltip": "禁用ai。必评指令遵循和回复准确性。",
+      "valueType": "textarea"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "preference",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "model1更好",
+            "value": 1
+          },
+          {
+            "label": "model2更好",
+            "value": 2
+          },
+          {
+            "label": "差不多",
+            "value": 3
+          },
+          {
+            "label": "都很差",
+            "value": 0
+          },
+          {
+            "label": "模型有异常，跳过这轮评测",
+            "value": -1
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "偏好",
+      "tooltip": "如果有任一模型回复有异常，那就选“模型有异常，跳过这轮评测”",
+      "valueType": "radio"
+    }
+  ]
+}

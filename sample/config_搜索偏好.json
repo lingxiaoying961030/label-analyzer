@@ -1,0 +1,189 @@
+{
+  "id": "01KQBHGQV1KGAY37PFQWZJY5GD",
+  "name": "搜索偏好0429",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "unable_to_judge_1",
+              "dependency": [],
+              "dependencyType": "and",
+              "initialValue": 0,
+              "options": [
+                {
+                  "label": "是",
+                  "value": 1
+                },
+                {
+                  "label": "否",
+                  "value": 0
+                }
+              ],
+              "required": true,
+              "title": "无法判断",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "reason",
+              "dependency": [
+                {
+                  "dataIndex": "unable_to_judge_1",
+                  "operator": "eq",
+                  "value": 1
+                }
+              ],
+              "dependencyType": "and",
+              "required": true,
+              "title": "理由",
+              "tooltip": "",
+              "valueType": "textarea"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "unable_to_judge",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "无法判断",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "continuousRanking": false,
+      "dataIndex": "rank",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "numOfColumns": 4,
+      "title": "排序",
+      "valueType": "responses_ranking"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea_auto_height"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "RubricAnalysis_1",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "rubric分析（回复1）",
+      "tooltip": "根据回复1，判断，回复1的rubric可能带来的问题/优化方向",
+      "valueType": "textarea_auto_height"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "RubricAnalysis_2",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "rubric分析（回复2）",
+      "tooltip": "根据回复2，判断，回复2的rubric可能带来的问题/优化方向",
+      "valueType": "textarea_auto_height"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "RubricAnalysis_3",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "rubric分析（回复3）",
+      "tooltip": "根据回复3，判断，回复3的rubric可能带来的问题/优化方向",
+      "valueType": "textarea_auto_height"
+    }
+  ]
+}

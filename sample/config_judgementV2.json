@@ -1,0 +1,168 @@
+{
+  "id": "01K7H67QHSHARBCBMH2E00ZCYN",
+  "name": "judgement_V2_annotate",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "response_error",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "是",
+            "value": 1
+          },
+          {
+            "label": "否",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "response是否存在错误",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "judgement_type",
+              "dependency": [],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "不存在质量问题",
+                  "value": 0
+                },
+                {
+                  "label": "存在分析错误",
+                  "value": 1
+                },
+                {
+                  "label": "存在分析遗漏",
+                  "value": 2
+                },
+                {
+                  "label": "存在分析错误和分析遗漏",
+                  "value": 3
+                }
+              ],
+              "required": true,
+              "title": "judgement质量判定",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "judgement_fix",
+              "dependency": [
+                {
+                  "dataIndex": "judgement_type",
+                  "operator": "eq",
+                  "value": 1
+                },
+                {
+                  "dataIndex": "judgement_type",
+                  "operator": "eq",
+                  "value": 2
+                },
+                {
+                  "dataIndex": "judgement_type",
+                  "operator": "eq",
+                  "value": 3
+                }
+              ],
+              "dependencyType": "or",
+              "required": true,
+              "title": "judgement修改",
+              "tooltip": "",
+              "valueType": "draggable_md_editor"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "judgement_quality",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "judgement判定和修改",
+      "valueType": "depend"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "valueType": "textarea_auto_height"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "url_link",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "参考链接",
+      "valueType": "editable_link"
+    }
+  ]
+}

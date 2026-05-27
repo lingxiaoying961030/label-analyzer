@@ -1,0 +1,128 @@
+{
+  "id": "01KPSJ5FWQSH7JK603WFBTXVW0",
+  "name": "搭子artifacts美观度筛选",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "bug",
+              "dependency": [],
+              "dependencyType": "and",
+              "initialValue": 0,
+              "options": [
+                {
+                  "label": "无bug",
+                  "value": 0
+                },
+                {
+                  "label": "有bug",
+                  "value": 1
+                }
+              ],
+              "required": true,
+              "title": "是否存在明显bug",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "static_aes",
+              "dependency": [
+                {
+                  "dataIndex": "bug",
+                  "operator": "eq",
+                  "value": 0
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "很好看",
+                  "value": 2
+                },
+                {
+                  "label": "略好看",
+                  "value": 1
+                },
+                {
+                  "label": "正常水平",
+                  "value": 0
+                },
+                {
+                  "label": "略丑",
+                  "value": -1
+                },
+                {
+                  "label": "很丑",
+                  "value": -2
+                }
+              ],
+              "required": true,
+              "title": "页面美观度（静态）",
+              "tooltip": "",
+              "valueType": "radio"
+            },
+            {
+              "dataIndex": "interaction_aes",
+              "dependency": [
+                {
+                  "dataIndex": "bug",
+                  "operator": "eq",
+                  "value": 0
+                }
+              ],
+              "dependencyType": "and",
+              "options": [
+                {
+                  "label": "很丝滑",
+                  "value": 2
+                },
+                {
+                  "label": "略丝滑",
+                  "value": 1
+                },
+                {
+                  "label": "正常水平",
+                  "value": 0
+                },
+                {
+                  "label": "略生硬",
+                  "value": -1
+                },
+                {
+                  "label": "很生硬",
+                  "value": -2
+                }
+              ],
+              "required": true,
+              "title": "页面美观度（交互/动态）",
+              "tooltip": "",
+              "valueType": "radio"
+            }
+          ]
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "label",
+      "formItemProps": {
+        "rules": [
+          {
+            "message": "检查必填项!",
+            "required": true
+          }
+        ]
+      },
+      "title": "组合标注",
+      "valueType": "depend"
+    }
+  ]
+}

@@ -1,0 +1,183 @@
+{
+  "id": "01KCR4W2K7V0WSERZ5098SDVGM",
+  "name": "zzz拉框测试2",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": {
+            "defaultMode": "select",
+            "enableContinuousDraw": false,
+            "enableRotation": true,
+            "exportRelativeCoordinates": true,
+            "relativeMaxX": 999,
+            "relativeMaxY": 999,
+            "showLabels": true,
+            "showResponse": true,
+            "tags": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "color": "#a6bc65",
+                        "id": "sangaaasd",
+                        "name": "第三层",
+                        "properties": [
+                          {
+                            "id": "sandeshuxing",
+                            "name": "第三层的属性",
+                            "type": "textarea"
+                          }
+                        ],
+                        "shortcut": {
+                          "key": "1"
+                        },
+                        "strokeWidth": 2,
+                        "toolType": "rect"
+                      }
+                    ],
+                    "color": "#a96c7c",
+                    "id": "tigan",
+                    "name": "题干",
+                    "properties": [
+                      {
+                        "id": "text1",
+                        "name": "描述",
+                        "options": [
+                          {
+                            "label": "数字1",
+                            "value": "1"
+                          },
+                          {
+                            "label": "数字2",
+                            "value": "2"
+                          }
+                        ],
+                        "type": "select"
+                      }
+                    ],
+                    "shortcut": {
+                      "key": "1"
+                    },
+                    "strokeWidth": 2,
+                    "toolType": "rect"
+                  },
+                  {
+                    "color": "#aafede",
+                    "id": "er",
+                    "name": "第二级标签",
+                    "properties": [
+                      {
+                        "id": "erde",
+                        "name": "第二级的属性",
+                        "type": "textarea"
+                      }
+                    ],
+                    "shortcut": {
+                      "key": "2"
+                    },
+                    "strokeWidth": 1,
+                    "toolType": "rect"
+                  }
+                ],
+                "color": "#324258",
+                "id": "rect",
+                "name": "烧杯",
+                "properties": [
+                  {
+                    "id": "id",
+                    "name": "你好",
+                    "type": "textarea"
+                  }
+                ],
+                "strokeWidth": 2,
+                "toolType": "rect"
+              },
+              {
+                "children": [],
+                "color": "#e5145f",
+                "id": "point",
+                "name": "多个点",
+                "properties": [
+                  {
+                    "id": "1asd",
+                    "name": "asd",
+                    "type": "textarea"
+                  }
+                ],
+                "strokeWidth": 3,
+                "toolType": "pointGroup"
+              },
+              {
+                "children": [],
+                "color": "#c6dcc8",
+                "id": "123",
+                "name": "线",
+                "properties": [
+                  {
+                    "id": "1234454",
+                    "name": "线",
+                    "type": "textarea"
+                  }
+                ],
+                "strokeWidth": 4,
+                "toolType": "polyline"
+              },
+              {
+                "children": [],
+                "color": "#e905dd",
+                "id": "haha",
+                "name": "单个点",
+                "pointGroupLimit": 1,
+                "properties": [
+                  {
+                    "id": "name",
+                    "name": "名字",
+                    "options": [
+                      {
+                        "label": "1",
+                        "value": "1"
+                      },
+                      {
+                        "label": "2",
+                        "value": "2"
+                      },
+                      {
+                        "label": "3",
+                        "value": "3"
+                      }
+                    ],
+                    "type": "select"
+                  }
+                ],
+                "strokeWidth": 3,
+                "toolType": "pointGroup"
+              }
+            ]
+          }
+        },
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "test",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "test",
+      "useModal": "inline",
+      "valueType": "image_annotation_v3"
+    }
+  ]
+}

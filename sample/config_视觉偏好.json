@@ -1,0 +1,222 @@
+{
+  "id": "01JZ5A0ZSF673R73JDQDZH138Y",
+  "name": "视觉偏好标注",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "consistency",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "是",
+            "value": 1
+          },
+          {
+            "label": "否",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "initialValue": 1,
+      "title": "一致性",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "correctness",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "是",
+            "value": 1
+          },
+          {
+            "label": "否",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "initialValue": 1,
+      "title": "正确性",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "fluency",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "是",
+            "value": 1
+          },
+          {
+            "label": "否",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "initialValue": 1,
+      "title": "流畅性",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "0-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "safety",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "是",
+            "value": 1
+          },
+          {
+            "label": "否",
+            "value": 0
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "initialValue": 1,
+      "title": "安全性",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "preference",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "无偏好",
+            "value": 0
+          },
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "回复3更好",
+            "value": 3
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "偏好",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": false
+          }
+        ]
+      },
+      "title": "笔记",
+      "tooltip": "简要备注你以上选择的理由（特别是偏好）",
+      "valueType": "textarea_auto_height"
+    }
+  ]
+}

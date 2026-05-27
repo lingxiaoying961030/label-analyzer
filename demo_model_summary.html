@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>模型汇总看板 Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  :root{--bg:#0f1117;--surface:#161923;--border:#2a2e3d;--text:#e4e6ed;--t2:#8b8fa3;--t3:#5a5e72;
+    --green:#00b894;--red:#e17055;--blue:#74b9ff;--orange:#fdcb6e;--al:#a29bfe;--cyan:#00cec9;
+    --r:8px;--R:12px}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);padding:24px;min-height:100vh}
+  h1{font-size:20px;font-weight:700;margin-bottom:6px}
+  .subtitle{color:var(--t2);font-size:12px;margin-bottom:24px}
+  .upload-row{display:flex;gap:12px;margin-bottom:24px}
+  .up-box{flex:1;border:1.5px dashed var(--border);border-radius:var(--r);padding:16px;text-align:center;cursor:pointer;font-size:12px;color:var(--t2);transition:.2s}
+  .up-box:hover{border-color:var(--blue)}
+  .up-box.ok{border-color:var(--green);border-style:solid}
+  .up-box .icon{font-size:24px;margin-bottom:4px}
+  .up-box .name{font-size:11px;color:var(--green);margin-top:4px}
+
+  .card{background:var(--surface);border-radius:var(--R);border:1px solid var(--border);margin-bottom:20px;overflow:visible}
+  .card-h{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+  .card-h h2{font-size:15px;font-weight:600}
+  .card-h .tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+  .card-b{padding:16px 20px 20px}
+
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{text-align:left;padding:8px 10px;color:var(--t2);font-weight:500;border-bottom:1px solid var(--border);font-size:11px}
+  td{padding:8px 10px;border-bottom:1px solid rgba(42,46,61,.5)}
+  .model-name{font-weight:600;color:var(--text);max-width:200px;word-break:break-all;font-size:11px}
+  .val{font-weight:700;font-size:14px}
+  .val.good{color:var(--green)}
+  .val.bad{color:var(--red)}
+  .val.neutral{color:var(--t2)}
+  .bar-cell{position:relative}
+  .bar-bg{position:absolute;left:0;top:0;bottom:0;border-radius:3px;opacity:.15}
+  .bar-text{position:relative;z-index:1}
+
+  .sr{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+  .sb{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+  .sv{font-size:22px;font-weight:700;margin-bottom:2px}
+  .sl{font-size:10px;color:var(--t3)}
+
+  .chart-row{margin-top:16px}
+  .chart-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);height:380px}
+
+  .section-title{font-size:12px;font-weight:600;color:var(--t2);margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .legend{display:flex;gap:16px;margin-bottom:12px;font-size:11px;color:var(--t2)}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+</style>
+</head>
+<body>
+
+<h1>📊 模型汇总看板</h1>
+<div class="subtitle">上传 Config + JSONL 数据，自动汇总每个模型在各指标上的表现</div>
+
+<div class="upload-row">
+  <div class="up-box" id="upConfig" onclick="document.getElementById('fConfig').click()">
+    <div class="icon">⚙️</div>Config 文件
+    <input type="file" id="fConfig" accept=".json" style="display:none" onchange="loadConfig(this)">
+    <div class="name" id="cfgName"></div>
+  </div>
+  <div class="up-box" id="upData" onclick="document.getElementById('fData').click()">
+    <div class="icon">📊</div>JSONL 数据
+    <input type="file" id="fData" accept=".jsonl,.json" style="display:none" onchange="loadData(this)">
+    <div class="name" id="dataName"></div>
+  </div>
+</div>
+
+<div id="output"></div>
+
+<script>
+let configData=null, records=[], models=[], charts=[];
+
+function loadConfig(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      configData=JSON.parse(e.target.result);
+      document.getElementById('upConfig').classList.add('ok');
+      document.getElementById('cfgName').textContent='✓ '+file.name;
+      if(records.length)analyze();
+    }catch(err){alert('Config解析失败: '+err.message)}
+  };
+  reader.readAsText(file);
+}
+
+function loadData(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    records=[];
+    const lines=e.target.result.split('\n');
+    lines.forEach(l=>{
+      l=l.trim();if(!l)return;
+      try{records.push(JSON.parse(l))}catch(err){}
+    });
+    // Detect models
+    const ms=new Set();
+    records.forEach(r=>(r.responses||[]).forEach(resp=>{if(resp.model)ms.add(resp.model)}));
+    models=[...ms];
+    document.getElementById('upData').classList.add('ok');
+    document.getElementById('dataName').textContent=`✓ ${file.name} · ${records.length}条`;
+    if(configData)analyze();
+  };
+  reader.readAsText(file);
+}
+
+function analyze(){
+  if(!configData||!records.length||!models.length)return;
+  charts.forEach(c=>c.dispose());charts=[];
+
+  // Step 1: Parse config to find indicator groups
+  // An indicator group is a depend field whose sub-fields include:
+  //   - "issue" type: radio with options like 均不存在/res_1存在/res_2存在/均存在
+  //   - "preference" type: radio with options like 回复1更好/回复2更好/无偏好
+  const indicators=[];
+
+  // Extract config_data from various config formats
+  function getConfigItems(cfg){
+    // Format 1: {config_data: [...]}
+    if(cfg.config_data&&Array.isArray(cfg.config_data))return cfg.config_data;
+    // Format 2: {templates: [{template_body: [...]}]}
+    // Use the template with the most fields (likely the main evaluation template)
+    if(cfg.templates&&Array.isArray(cfg.templates)){
+      let best=[];
+      for(const t of cfg.templates){
+        let body=t.template_body;
+        if(typeof body==='string')try{body=JSON.parse(body)}catch(e){}
+        if(Array.isArray(body)){
+          const items=body.filter(x=>x&&typeof x==='object');
+          if(items.length>best.length)best=items;
+        }
+      }
+      if(best.length)return best;
+    }
+    return[];
+  }
+
+  // Detect "issue" field pattern: options describe presence/absence for 2 entities
+  // Patterns: "均不存在"/"均存在", "都正确"/"都不正确", "1正确2不正确" etc.
+  function detectIssueField(opts){
+    if(!opts||opts.length<3)return null;
+    const joined=opts.map(o=>(o.label||'')).join('|');
+    // Group A (both-ok): 均不、均无、都正确、都不存在、都没、都无
+    const hasNeither=/(均不|均无|都正确|都不存在|都没|都无)/.test(joined);
+    // Group B (both-bad): 均有、均存在、都不正确、都有、都存在、都错)
+    const hasBoth=/(均有|均存在|都不正确|都有|都存在|都错)/.test(joined);
+    if(hasNeither&&hasBoth)return true;
+    // Cross pattern: 1正确2不正确 / 1存在2不存在 etc.
+    if(/1.*正确.*2.*不正确|1.*存在.*2.*不存在|1.*好.*2.*不好/.test(joined))return true;
+    if(/1.*不正确.*2.*正确|1.*不存在.*2.*存在/.test(joined))return true;
+    // Generic "都X" + "都不X" pattern
+    if(/都[^不\|]*\|/.test(joined)&&/都不/.test(joined))return true;
+    return false;
+  }
+
+  // Detect "preference" field pattern
+  function detectPrefField(opts){
+    if(!opts||opts.length<2)return null;
+    const joined=opts.map(o=>(o.label||'')).join('|');
+    // Pattern: X好/X更好/X优/X胜/X优于
+    const has1=/(1.*好|1.*更好|1.*优|1.*胜)/.test(joined);
+    const has2=/(2.*好|2.*更好|2.*优|2.*胜)/.test(joined);
+    if(has1&&has2)return true;
+    // Pattern: "X优于Y" — one option says A优于B, another says B优于A
+    if(/优于/.test(joined)&&joined.split('优于').length>=3)return true;
+    return false;
+  }
+
+  // Parse issue options into a mapping: {neither, both, entity1Only, entity2Only}
+  // "entity1Only" means entity1 HAS the issue (entity2 doesn't)
+  function parseIssueMapping(opts){
+    const map={};
+    opts.forEach(o=>{
+      const lb=o.label||'';
+      // Pattern A: "均不存在"/"均存在"/"res_1存在res_2不存在" (issue = 存在)
+      if(/均不存在|均无|都没有/.test(lb)){map.neither=o.value;return}
+      if(/均存在|均有/.test(lb)){map.both=o.value;return}
+      if(/1.*存在.*2.*不|1.*有.*2.*[没不无]/.test(lb)){map.entity1Only=o.value;return}
+      if(/2.*存在.*1.*不|2.*有.*1.*[没不无]|1.*不.*2.*存在/.test(lb)){map.entity2Only=o.value;return}
+      // Pattern B: "都正确"/"都不正确"/"1正确2不正确" (issue = 不正确)
+      // "都正确" = neither has issue, "都不正确" = both have issue
+      // "1正确2不正确" = entity2 has issue (entity1 is fine!)
+      if(/都正确|均正确/.test(lb)&&!/不正确|不/.test(lb.replace(/都正确|均正确/g,''))){map.neither=o.value;return}
+      if(/都不正确|均不正确/.test(lb)){map.both=o.value;return}
+      if(/1.*正确.*2.*不正确/.test(lb)){map.entity2Only=o.value;return}  // 1 is correct, 2 has issue
+      if(/1.*不正确.*2.*正确/.test(lb)){map.entity1Only=o.value;return}  // 1 has issue, 2 is correct
+      if(/2.*正确.*1.*不正确/.test(lb)){map.entity1Only=o.value;return}
+      if(/2.*不正确.*1.*正确/.test(lb)){map.entity2Only=o.value;return}
+    });
+    // Fallback by value convention (for RL评测: 1=neither,2=e1only,3=e2only,4=both)
+    if(Object.keys(map).length<3){
+      if(opts.length===4){
+        map.neither=map.neither??opts[0].value;
+        map.both=map.both??opts[1].value;
+        map.entity1Only=map.entity1Only??opts[2].value;
+        map.entity2Only=map.entity2Only??opts[3].value;
+      }
+    }
+    return map;
+  }
+
+  // Parse preference options: {entity1Win, entity2Win, tie}
+  function parsePrefMapping(opts){
+    const map={};
+    opts.forEach(o=>{
+      const lb=o.label||'';
+      // Entity1 wins: 1好/1更好/1优/1胜/回复1更好/judgement1好/X优于Y(where X=entity1)
+      if(/(?:^|judgement|回复|res_?|response|模型)\s*1.*(?:好|更好|优|胜)/.test(lb)&&!/2.*(?:好|更好|优|胜)/.test(lb)){
+        map.entity1Win=o.value;return;
+      }
+      // Entity2 wins
+      if(/(?:^|judgement|回复|res_?|response|模型)\s*2.*(?:好|更好|优|胜)/.test(lb)&&!/1.*(?:好|更好|优|胜)/.test(lb)){
+        map.entity2Win=o.value;return;
+      }
+      // "X优于Y" pattern: check if 1 is before 优于
+      if(/1.*优于.*2/.test(lb)){map.entity1Win=o.value;return}
+      if(/2.*优于.*1/.test(lb)){map.entity2Win=o.value;return}
+      // Tie: 无偏好/无偏/tie/差不多/相同/持平/一样/无差
+      if(/无偏|相同|持平|一样|无差|差不多|^tie$/i.test(lb)){map.tie=o.value;return}
+    });
+    return map;
+  }
+
+  // Detect entity names from data (responses[].model or judgement model names)
+  function detectEntities(records){
+    // Try responses first
+    const modelSet=new Set();
+    records.slice(0,50).forEach(r=>{
+      (r.responses||[]).forEach(resp=>{if(resp.model)modelSet.add(resp.model)});
+    });
+    if(modelSet.size>=2)return{type:'responses',entities:[...modelSet]};
+
+    // Try judgements or other patterns
+    // For now fallback to generic "entity1"/"entity2"
+    return{type:'generic',entities:['entity1','entity2']};
+  }
+
+  const configItems=getConfigItems(configData);
+  configItems.forEach(item=>{
+    if(!item||!item.dataIndex)return;
+
+    // Top-level radio: check if it's a preference field
+    if(item.valueType==='radio'){
+      const opts=(item.options||(item.fieldProps||{}).options||[]);
+      if(detectPrefField(opts)){
+        indicators.push({
+          parentKey:null,
+          directKey:item.dataIndex,
+          label:item.title,
+          issue:null,
+          pref:{dataIndex:item.dataIndex,title:item.title,options:opts}
+        });
+      }
+      return;
+    }
+
+    if(item.valueType!=='depend')return;
+    const allCols=[];
+    (item.columns||[]).forEach(c=>{
+      if(c.columns)c.columns.forEach(inner=>{
+        if(inner.columns)inner.columns.forEach(deep=>allCols.push(deep));
+        else allCols.push(inner);
+      });
+      else allCols.push(c);
+    });
+
+    let issueField=null, prefField=null;
+    allCols.forEach(col=>{
+      if(col.dataIndex==='visibleRule')return;
+      const opts=(col.options||col.fieldProps?.options||[]);
+      if(!opts.length)return;
+
+      // Detect issue field: options contain patterns like "均不存在"/"均存在"
+      if(detectIssueField(opts)){
+        issueField={dataIndex:col.dataIndex,title:col.title,options:opts};
+      }
+      if(detectPrefField(opts)){
+        prefField={dataIndex:col.dataIndex,title:col.title,options:opts};
+      }
+    });
+
+    if(issueField||prefField){
+      indicators.push({
+        parentKey:item.dataIndex,
+        label:item.title,
+        issue:issueField,
+        pref:prefField
+      });
+    }
+  });
+
+  if(!indicators.length){
+    document.getElementById('output').innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--t2);padding:40px">未检测到可汇总的指标（需要 depend 字段包含存在性/偏好型子字段）</div></div>';
+    return;
+  }
+
+  // Aggregate per model
+  const modelStats={};// model -> [{indicator, issueCount, prefWin, prefTotal}]
+  models.forEach(m=>{
+    modelStats[m]=indicators.map(ind=>({
+      label:ind.label,
+      issueCount:0,
+      prefWin:0,
+      prefTie:0,
+      prefTotal:0,
+      totalRecords:0
+    }));
+  });
+
+  records.forEach(rec=>{
+    const order=(rec.responses||[]).map(r=>r.model);
+    if(order.length<2)return;
+
+    const labels=rec.labels||[];
+    labels.forEach(label=>{
+      const result=label.result;
+      if(!result||typeof result!=='object')return;
+
+      indicators.forEach((ind,ii)=>{
+        // For top-level fields (directKey), access result directly
+        let parent;
+        if(ind.directKey){
+          parent=result;
+        }else{
+          parent=result[ind.parentKey];
+          if(!parent||typeof parent!=='object')return;
+        }
+
+        // Issue check
+        if(ind.issue){
+          const imap=parseIssueMapping(ind.issue.options);
+          const iv=parent[ind.issue.dataIndex];
+          if(iv!==undefined&&iv!==null&&iv!==''){
+            models.forEach(m=>{
+              const pos=order.indexOf(m);
+              if(pos<0)return;
+              modelStats[m][ii].totalRecords++;
+              const isFirst=(pos===0);
+              // eslint-disable-next-line eqeqeq
+              if(isFirst&&(iv==imap.entity1Only||iv==imap.both)){
+                modelStats[m][ii].issueCount++;
+              }else if(!isFirst&&(iv==imap.entity2Only||iv==imap.both)){
+                modelStats[m][ii].issueCount++;
+              }
+            });
+          }
+        }
+
+        // Preference check
+        if(ind.pref){
+          const pmap=parsePrefMapping(ind.pref.options);
+          const pv=parent[ind.pref.dataIndex];
+          if(pv!==undefined&&pv!==null&&pv!==''){
+            models.forEach(m=>{
+              const pos=order.indexOf(m);
+              if(pos<0)return;
+              modelStats[m][ii].prefTotal++;
+              const isFirst=(pos===0);
+              // eslint-disable-next-line eqeqeq
+              if(isFirst&&pv==pmap.entity1Win)modelStats[m][ii].prefWin++;
+              else if(!isFirst&&pv==pmap.entity2Win)modelStats[m][ii].prefWin++;
+              else if(pmap.tie!==undefined&&pv==pmap.tie)modelStats[m][ii].prefTie++;
+            });
+          }
+        }
+      });
+    });
+  });
+
+  // Step 3: Render
+  let html='';
+
+  // Overview stats
+  html+=`<div class="sr">
+    <div class="sb"><div class="sv" style="color:var(--blue)">${records.length}</div><div class="sl">数据条数</div></div>
+    <div class="sb"><div class="sv" style="color:var(--green)">${models.length}</div><div class="sl">模型数量</div></div>
+    <div class="sb"><div class="sv" style="color:var(--orange)">${indicators.length}</div><div class="sl">评测维度</div></div>
+  </div>`;
+
+  // ===== Issue table =====
+  const hasIssue=indicators.some(ind=>ind.issue);
+  if(hasIssue){
+    html+=`<div class="card"><div class="card-h"><h2>🔍 问题存在性汇总</h2><span class="tag" style="background:rgba(225,112,85,.12);color:var(--red)">越少越好</span></div><div class="card-b">`;
+    html+=`<table><thead><tr><th style="width:160px">模型</th>`;
+    indicators.forEach(ind=>{if(ind.issue)html+=`<th>${cleanLabel(ind.label)}</th>`});
+    html+=`<th>总问题数</th></tr></thead><tbody>`;
+
+    // Find max for color coding
+    const maxIssues=models.map(m=>modelStats[m].reduce((s,x)=>s+x.issueCount,0));
+    const overallMax=Math.max(...maxIssues,1);
+
+    models.forEach(m=>{
+      const stats=modelStats[m];
+      const total=stats.reduce((s,x)=>s+x.issueCount,0);
+      const shortName=m.length>30?m.slice(0,30)+'…':m;
+      html+=`<tr><td class="model-name" title="${m}">${shortName}</td>`;
+      indicators.forEach((ind,ii)=>{
+        if(!ind.issue)return;
+        const s=stats[ii];
+        const rate=s.totalRecords?(s.issueCount/s.totalRecords*100).toFixed(1):'0';
+        const isWorst=models.every(m2=>modelStats[m2][ii].issueCount<=s.issueCount)&&s.issueCount>0;
+        html+=`<td><span class="val ${s.issueCount===0?'good':isWorst?'bad':''}">${s.issueCount}</span> <span style="font-size:10px;color:var(--t3)">(${rate}%)</span></td>`;
+      });
+      html+=`<td><span class="val ${total===Math.min(...maxIssues)?'good':'bad'}">${total}</span></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div class="chart-row"><div class="chart-box" id="issueBar"></div></div>`;
+    html+=`</div></div>`;
+  }
+
+  // ===== Preference table =====
+  const hasPref=indicators.some(ind=>ind.pref);
+  if(hasPref){
+    html+=`<div class="card"><div class="card-h"><h2>🏆 偏好胜率汇总</h2><span class="tag" style="background:rgba(0,184,148,.12);color:var(--green)">越高越好</span></div><div class="card-b">`;
+    html+=`<table><thead><tr><th style="width:160px">模型</th>`;
+    indicators.forEach(ind=>{if(ind.pref)html+=`<th>${cleanLabel(ind.label)}</th>`});
+    html+=`<th>平均胜率</th></tr></thead><tbody>`;
+
+    models.forEach(m=>{
+      const stats=modelStats[m];
+      let totalWin=0,totalTie=0,totalAll=0;
+      const shortName=m.length>30?m.slice(0,30)+'…':m;
+      html+=`<tr><td class="model-name" title="${m}">${shortName}</td>`;
+      indicators.forEach((ind,ii)=>{
+        if(!ind.pref)return;
+        const s=stats[ii];
+        const winRate=s.prefTotal?(s.prefWin/s.prefTotal*100).toFixed(1):'0';
+        const tieRate=s.prefTotal?(s.prefTie/s.prefTotal*100).toFixed(1):'0';
+        const loseCount=s.prefTotal-s.prefWin-s.prefTie;
+        totalWin+=s.prefWin;totalTie+=s.prefTie;totalAll+=s.prefTotal;
+        const isBest=models.every(m2=>{const s2=modelStats[m2][ii];const r2=s2.prefTotal?(s2.prefWin/s2.prefTotal):0;return(s.prefTotal?(s.prefWin/s.prefTotal):0)>=r2});
+        html+=`<td><span class="val ${isBest&&s.prefWin>0?'good':''}">${winRate}%</span> <span style="font-size:10px;color:var(--t3)">胜${s.prefWin} 平${s.prefTie} 负${loseCount}</span></td>`;
+      });
+      const avgRate=totalAll?(totalWin/totalAll*100).toFixed(1):'0';
+      const avgTie=totalAll?(totalTie/totalAll*100).toFixed(1):'0';
+      html+=`<td><span class="val ${parseFloat(avgRate)>50?'good':''}">${avgRate}%</span> <span style="font-size:10px;color:var(--t3)">平${avgTie}%</span></td></tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div class="chart-row"><div class="chart-box" id="prefBar"></div></div>`;
+    html+=`</div></div>`;
+  }
+
+  document.getElementById('output').innerHTML=html;
+
+  // ===== Charts =====
+  // Helper: clean label text
+  function cleanLabel(text){
+    return (text||'').replace(/[""\u201C\u201D]/g,'').replace(/维度$/,'').trim();
+  }
+
+  // Helper: wrap long labels for X-axis
+  function wrapLabel(text,maxLen){
+    if(!text||text.length<=maxLen)return text;
+    const lines=[];
+    for(let i=0;i<text.length;i+=maxLen){
+      lines.push(text.slice(i,i+maxLen));
+    }
+    return lines.join('\n');
+  }
+
+  const modelColors=['#74b9ff','#e17055','#00b894','#fdcb6e','#a29bfe','#00cec9'];
+
+  // Issue bar chart
+  if(hasIssue){
+    const el=document.getElementById('issueBar');
+    if(el){
+      const c=echarts.init(el,'dark');
+      const indLabels=indicators.filter(i=>i.issue).map(i=>cleanLabel(i.label));
+      const series=models.map((m,mi)=>({
+        name:m.length>20?m.slice(0,20)+'…':m,
+        type:'bar',
+        data:indicators.filter(i=>i.issue).map((_,ii)=>{
+          const idx=indicators.indexOf(indicators.filter(i=>i.issue)[ii]);
+          return modelStats[m][idx].issueCount;
+        }),
+        itemStyle:{color:modelColors[mi%modelColors.length]},
+        label:{show:true,position:'top',fontSize:10,color:'#e4e6ed'}
+      }));
+      const wrappedLabels=indLabels.map(l=>wrapLabel(l,8));
+      const maxLines=Math.max(...wrappedLabels.map(l=>(l.match(/\n/g)||[]).length+1));
+      const bottomPx=20+maxLines*16;
+      c.setOption({
+        backgroundColor:'transparent',
+        title:{text:'问题数量对比',textStyle:{color:'#e4e6ed',fontSize:13},left:16,top:10},
+        tooltip:{trigger:'axis',confine:true},
+        legend:{data:series.map(s=>s.name),textStyle:{color:'#8b8fa3',fontSize:10},top:10,right:16},
+        grid:{left:50,right:20,top:50,bottom:bottomPx},
+        xAxis:{type:'category',data:wrappedLabels,axisLabel:{color:'#8b8fa3',fontSize:11,interval:0},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+        yAxis:{type:'value',axisLabel:{color:'#8b8fa3'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+        series
+      });
+      charts.push(c);
+    }
+
+  }
+
+  // Preference bar chart
+  if(hasPref){
+    const el=document.getElementById('prefBar');
+    if(el){
+      const c=echarts.init(el,'dark');
+      const indList=indicators.filter(i=>i.pref);
+      const series=models.map((m,mi)=>({
+        name:m.length>20?m.slice(0,20)+'…':m,
+        type:'bar',
+        data:indList.map(ind=>{
+          const idx=indicators.indexOf(ind);
+          const s=modelStats[m][idx];
+          return s.prefTotal?parseFloat((s.prefWin/s.prefTotal*100).toFixed(1)):0;
+        }),
+        itemStyle:{color:modelColors[mi%modelColors.length]},
+        label:{show:true,position:'top',fontSize:10,color:'#e4e6ed',formatter:'{c}%'}
+      }));
+      const prefLabelsW=indList.map(i=>wrapLabel(cleanLabel(i.label),8));
+      const prefMaxLines=Math.max(...prefLabelsW.map(l=>(l.match(/\n/g)||[]).length+1));
+      const prefBottom=20+prefMaxLines*16;
+      c.setOption({
+        backgroundColor:'transparent',
+        title:{text:'偏好胜率对比',textStyle:{color:'#e4e6ed',fontSize:13},left:16,top:10},
+        tooltip:{trigger:'axis',confine:true,formatter:params=>{
+          let s=params[0].axisValue.replace(/\n/g,'')+'\n';
+          params.forEach(p=>s+=`${p.marker} ${p.seriesName}: ${p.value}%\n`);
+          return s}},
+        legend:{data:series.map(s=>s.name),textStyle:{color:'#8b8fa3',fontSize:10},top:10,right:16},
+        grid:{left:50,right:20,top:50,bottom:prefBottom},
+        xAxis:{type:'category',data:prefLabelsW,axisLabel:{color:'#8b8fa3',fontSize:11,interval:0},axisLine:{lineStyle:{color:'#2a2e3d'}}},
+        yAxis:{type:'value',max:100,axisLabel:{color:'#8b8fa3',formatter:'{value}%'},splitLine:{lineStyle:{color:'#2a2e3d'}}},
+        series
+      });
+      charts.push(c);
+    }
+
+  }
+}
+
+window.addEventListener('resize',()=>charts.forEach(c=>c.resize()));
+</script>
+</body>
+</html>

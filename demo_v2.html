@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Label Analyzer v2 - Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface-hover: #222633;
+    --border: #2a2e3d; --text: #e4e6ed; --text-secondary: #8b8fa3;
+    --accent: #6c5ce7; --accent-light: #a29bfe;
+    --green: #00b894; --red: #e17055; --orange: #fdcb6e;
+    --blue: #74b9ff; --purple: #a29bfe; --cyan: #00cec9;
+    --gray: #636e72; --radius: 12px;
+  }
+  body { font-family: 'Noto Sans SC', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Header */
+  .header { padding: 28px 48px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, #15171f 0%, var(--bg) 100%); display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 26px; font-weight: 700; background: linear-gradient(135deg, var(--accent-light), var(--blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .subtitle { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+  .config-selector { display: flex; align-items: center; gap: 10px; }
+  .config-selector label { font-size: 13px; color: var(--text-secondary); }
+  .config-selector select { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; outline: none; min-width: 240px; }
+  .config-selector select:focus { border-color: var(--accent); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 48px; }
+
+  /* Section */
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+
+  /* Upload */
+  .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .upload-box { border: 2px dashed var(--border); border-radius: var(--radius); padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.25s; background: var(--surface); }
+  .upload-box:hover { border-color: var(--accent); background: var(--surface-hover); }
+  .upload-box.uploaded { border-color: var(--green); border-style: solid; }
+  .upload-box .icon { font-size: 32px; margin-bottom: 8px; opacity: 0.7; }
+  .upload-box .label { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .upload-box .hint { font-size: 12px; color: var(--text-secondary); }
+  .upload-box .file-info { margin-top: 10px; font-size: 12px; color: var(--green); font-weight: 500; }
+
+  /* Config Preview - Split Layout */
+  .config-split { display: grid; grid-template-columns: 260px 1fr; gap: 0; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; min-height: 320px; }
+  .config-left { border-right: 1px solid var(--border); padding: 16px 0; overflow-y: auto; max-height: 420px; }
+  .config-left-header { padding: 0 16px 12px; font-size: 12px; color: var(--text-secondary); border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .config-left-header .proj-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .field-item-left { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+  .field-item-left:hover { background: var(--surface-hover); }
+  .field-item-left.active { background: rgba(108,92,231,0.08); border-left-color: var(--accent); }
+  .field-item-left .f-icon { font-size: 16px; flex-shrink: 0; }
+  .field-item-left .f-info { flex: 1; min-width: 0; }
+  .field-item-left .f-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .field-item-left .f-type { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .type-tag { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 500; white-space: nowrap; }
+  .type-tag.radio { background: rgba(108,92,231,0.15); color: var(--accent-light); }
+  .type-tag.checkbox { background: rgba(108,92,231,0.15); color: var(--accent-light); }
+  .type-tag.textarea { background: rgba(0,184,148,0.15); color: var(--green); }
+  .type-tag.depend { background: rgba(116,185,255,0.15); color: var(--blue); }
+  .type-tag.form_list { background: rgba(253,203,110,0.15); color: var(--orange); }
+  .type-tag.text_label { background: rgba(0,206,201,0.15); color: var(--cyan); }
+  .type-tag.other { background: rgba(99,110,114,0.15); color: var(--gray); }
+
+  .config-right { padding: 20px 24px; overflow-y: auto; max-height: 420px; }
+  .config-right .detail-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .config-right .detail-type { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .detail-section { margin-bottom: 16px; }
+  .detail-section-title { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 500; }
+  .option-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .option-chip { font-size: 12px; padding: 4px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+  .option-chip .val { color: var(--text-secondary); margin-right: 4px; }
+  .sub-field-tree { padding-left: 0; }
+  .sub-field-node { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(42,46,61,0.4); }
+  .sub-field-node:last-child { border-bottom: none; }
+  .tree-line { color: var(--text-secondary); font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .sub-field-info { flex: 1; }
+  .sub-field-name { font-size: 13px; font-weight: 500; }
+  .sub-field-type { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .sub-field-opts { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .visible-rule-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; background: rgba(108,92,231,0.1); border-radius: 4px; color: var(--accent-light); margin-top: 8px; }
+  .dep-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 8px; background: rgba(253,203,110,0.1); border-radius: 4px; color: var(--orange); margin-top: 4px; }
+
+  /* Analysis Config */
+  .analysis-panel { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 20px 24px; }
+  .analysis-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .analysis-header .sel-count { font-size: 12px; color: var(--text-secondary); }
+  .model-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .model-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+  .group-section { margin-bottom: 18px; }
+  .group-title { font-size: 13px; font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .group-title .g-icon { font-size: 15px; }
+  .group-title .g-count { font-size: 11px; color: var(--text-secondary); margin-left: 4px; }
+  .field-cards { display: flex; flex-wrap: wrap; gap: 8px; }
+  .field-card { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.15s; font-size: 13px; user-select: none; }
+  .field-card:hover { border-color: var(--accent); }
+  .field-card.selected { border-color: var(--accent); background: rgba(108,92,231,0.08); }
+  .field-card .fc-check { width: 16px; height: 16px; border-radius: 4px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; transition: all 0.15s; }
+  .field-card.selected .fc-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .field-card .fc-name { font-weight: 500; line-height: 1.4; }
+  .field-card .fc-meta { font-size: 11px; color: var(--text-secondary); margin-left: 2px; }
+
+  .btn-analyze { display: inline-flex; align-items: center; gap: 8px; padding: 11px 28px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 16px; font-family: inherit; }
+  .btn-analyze:hover { background: #5b4bd5; transform: translateY(-1px); }
+
+  /* Results */
+  .result-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+  .result-card-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .result-card-header h3 { font-size: 16px; font-weight: 600; }
+  .result-card-header .tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .result-card-body { padding: 20px 24px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat-box { background: var(--bg); border-radius: 8px; padding: 14px; text-align: center; border: 1px solid var(--border); }
+  .stat-value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+  .stat-count { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-box { background: var(--bg); border-radius: 8px; border: 1px solid var(--border); padding: 14px; height: 320px; }
+  .detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .detail-table th { text-align: left; padding: 8px 14px; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-table td { padding: 8px 14px; border-bottom: 1px solid rgba(42,46,61,0.5); }
+  .detail-table tr:last-child td { border-bottom: none; }
+  .detail-table tr:hover td { background: rgba(108,92,231,0.03); }
+  .file-compare-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 10px; }
+  .progress-bar-wrap { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+
+  /* Text stats */
+  .text-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .text-stat-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .text-stat-card .ts-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .text-stat-card .ts-value { font-size: 22px; font-weight: 700; }
+
+  /* Empty state */
+  .empty-hint { text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Label Analyzer</h1>
+    <div class="subtitle">标注数据可视化分析工具 · v2</div>
+  </div>
+  <div class="config-selector">
+    <label>切换 Config：</label>
+    <select id="configSelect" onchange="switchConfig(this.value)">
+    </select>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Upload -->
+  <div class="section">
+    <div class="section-title">数据上传</div>
+    <div class="upload-row">
+      <div class="upload-box uploaded">
+        <div class="icon">⚙️</div>
+        <div class="label">上传 Config 文件</div>
+        <div class="hint">标注平台导出的 JSON 配置文件</div>
+        <div class="file-info" id="configFileInfo">✓ config_numcount.json 已加载</div>
+      </div>
+      <div class="upload-box uploaded">
+        <div class="icon">📊</div>
+        <div class="label">上传 JSONL 数据文件</div>
+        <div class="hint">支持多文件，拖拽上传</div>
+        <div class="file-info">✓ 已加载 2 个文件 (18,432 条记录)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Config Preview -->
+  <div class="section">
+    <div class="section-title">Config 概览</div>
+    <div class="config-split">
+      <div class="config-left">
+        <div class="config-left-header">
+          <div class="proj-name" id="projName"></div>
+          <div id="fieldCountInfo"></div>
+        </div>
+        <div id="fieldList"></div>
+      </div>
+      <div class="config-right" id="fieldDetail">
+        <div class="empty-hint">← 点击左侧字段查看详情</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis Config -->
+  <div class="section">
+    <div class="section-title">分析配置</div>
+    <div class="analysis-panel">
+      <div class="analysis-header">
+        <div>
+          <div class="model-label">选择 Model</div>
+          <div class="model-row" id="modelRow"></div>
+        </div>
+        <div class="sel-count" id="selCount">已选 0 个字段</div>
+      </div>
+      <div id="analysisGroups"></div>
+      <button class="btn-analyze" onclick="showResults()">🚀 开始分析</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="section" id="resultsSection" style="display:none;">
+    <div class="section-title">分析结果</div>
+    <div id="resultsContainer"></div>
+  </div>
+</div>
+
+<script>
+// ========== CONFIG DATA (hardcoded from real files) ==========
+const ALL_CONFIGS = {
+  "config_numcount": {
+    name: "指令遵循评测集v3-数量统计annotate",
+    file: "config_numcount.json",
+    fields: [
+      { dataIndex: "compliance", title: "遵循判断", valueType: "depend", visibleRule: "0-0-0",
+        subFields: [
+          { title: "检查项合理性判断", valueType: "radio", options: [{label:"合理",value:0},{label:"不合理",value:1}] },
+          { title: "回复1检查项遵循判断", valueType: "radio", options: [{label:"遵循",value:0},{label:"不遵循",value:1}] },
+          { title: "回复2检查项遵循判断", valueType: "radio", options: [{label:"遵循",value:0},{label:"不遵循",value:1}] }
+        ]
+      },
+      { dataIndex: "quantity", title: "数量统计", valueType: "form_list", visibleRule: "0-0-0",
+        subFields: [
+          { title: "计数目标", valueType: "textarea" },
+          { title: "回复1要求数量", valueType: "text" },
+          { title: "回复2要求数量", valueType: "text" },
+          { title: "回复1实际数量", valueType: "text" },
+          { title: "回复2实际数量", valueType: "text" }
+        ]
+      },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea", visibleRule: "0-0-0", subFields: [] }
+    ],
+    models: ["judgement", "response"]
+  },
+  "config_logic": {
+    name: "内部逻辑判定_annotate",
+    file: "config_logic.json",
+    fields: [
+      { dataIndex: "response_conflict", title: "内部逻辑判断", valueType: "text_label", visibleRule: "0-0-0",
+        subFields: [
+          { title: "回复逻辑错误", valueType: "tag", options: [] },
+          { title: "judgement判断", valueType: "tag", options: [] }
+        ]
+      },
+      { dataIndex: "judgment_quality", title: "judgment质量判定", valueType: "checkbox", visibleRule: "1-0-0",
+        options: [{label:"judgment分析无误",value:0},{label:"judgment分析错误",value:1},{label:"judgment分析遗漏",value:2}],
+        subFields: []
+      },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea_auto_height", visibleRule: "0-0-0", subFields: [] }
+    ],
+    models: ["judgement", "response"]
+  },
+  "config_IF": {
+    name: "指令遵循评测集标注-偏好判断-annot",
+    file: "config_IF.json",
+    fields: [
+      { dataIndex: "res1_compliance", title: "回复1检查项遵循判定", valueType: "radio", visibleRule: "1-0-0",
+        options: [{label:"遵循",value:0},{label:"不遵循",value:1}], subFields: [] },
+      { dataIndex: "res1_note", title: "回复1-note", valueType: "textarea", visibleRule: "1-0-0", subFields: [] },
+      { dataIndex: "res2_compliance", title: "回复2检查项遵循判定", valueType: "radio", visibleRule: "2-0-0",
+        options: [{label:"遵循",value:0},{label:"不遵循",value:1}], subFields: [] },
+      { dataIndex: "res2_note", title: "回复2-note", valueType: "textarea", visibleRule: "2-0-0", subFields: [] },
+      { dataIndex: "overall_preference", title: "整体指令遵循偏好", valueType: "radio", visibleRule: "2-0-0",
+        options: [{label:"回复1更好",value:0},{label:"无偏好",value:1},{label:"回复2更好",value:2},{label:"跳过",value:3}], subFields: [] },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea", visibleRule: "0-0-0", subFields: [] }
+    ],
+    models: ["response1", "response2"]
+  },
+  "config_artifact": {
+    name: "搭子artifacts美观度筛选",
+    file: "config_artifact.json",
+    fields: [
+      { dataIndex: "combined", title: "组合标注", valueType: "depend", visibleRule: "0-0-0",
+        subFields: [
+          { title: "是否存在明显bug", valueType: "radio", options: [{label:"是",value:1},{label:"否",value:0}] },
+          { title: "页面美观度（静态）", valueType: "radio", options: [{label:"1分-很差",value:1},{label:"2分-较差",value:2},{label:"3分-一般",value:3},{label:"4分-较好",value:4},{label:"5分-很好",value:5}] },
+          { title: "页面美观度（交互/动态）", valueType: "radio", options: [{label:"1分-很差",value:1},{label:"2分-较差",value:2},{label:"3分-一般",value:3},{label:"4分-较好",value:4},{label:"5分-很好",value:5}] }
+        ]
+      }
+    ],
+    models: ["response"]
+  },
+  "config_judgementV2": {
+    name: "judgement_V2_annotate",
+    file: "config_judgementV2.json",
+    fields: [
+      { dataIndex: "response_error", title: "response是否存在错误", valueType: "radio", visibleRule: "2-0-0",
+        options: [{label:"是",value:1},{label:"否",value:0}], subFields: [] },
+      { dataIndex: "judgement_edit", title: "judgement判定和修改", valueType: "depend", visibleRule: "1-0-0",
+        subFields: [
+          { title: "judgement质量判定", valueType: "radio", options: [{label:"正确",value:0},{label:"错误",value:1}] },
+          { title: "judgement修改", valueType: "draggable_md_editor", options: [] }
+        ]
+      },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea_auto_height", visibleRule: "0-0-0", subFields: [] },
+      { dataIndex: "ref_links", title: "参考链接", valueType: "editable_link", visibleRule: "0-0-0", subFields: [] }
+    ],
+    models: ["judgement", "response"]
+  },
+  "config_体感测": {
+    name: "20260104-标注员体感测-修bug",
+    file: "config_体感测.json",
+    fields: [
+      { dataIndex: "model1_good", title: "model1的好note", valueType: "textarea", visibleRule: "1-0-0", subFields: [] },
+      { dataIndex: "model1_bad", title: "model1_坏note", valueType: "textarea", visibleRule: "1-0-0", subFields: [] },
+      { dataIndex: "model2_good", title: "model2的好note", valueType: "textarea", visibleRule: "2-0-0", subFields: [] },
+      { dataIndex: "model2_bad", title: "model2的坏note", valueType: "textarea", visibleRule: "2-0-0", subFields: [] },
+      { dataIndex: "preference", title: "偏好", valueType: "radio", visibleRule: "2-0-0",
+        options: [{label:"model1更好",value:0},{label:"model2更好",value:1},{label:"差不多",value:2},{label:"都很差",value:3},{label:"模型有异常，跳过这轮评测",value:4}], subFields: [] }
+    ],
+    models: ["model1", "model2"]
+  },
+  "config_学科": {
+    name: "学科感知code修改",
+    file: "config_学科.json",
+    fields: [
+      { dataIndex: "judge", title: "判断是否一致", valueType: "depend", visibleRule: "0-0-0",
+        subFields: [
+          { title: "是否需要跳过", valueType: "radio", options: [{label:"是",value:0},{label:"否",value:1}] },
+          { title: "是否正确", valueType: "radio", options: [{label:"是",value:1},{label:"否",value:0}], dependency: "当是否需要跳过=否时显示" },
+          { title: "修改后的图片生成代码", valueType: "draggable_md_editor", dependency: "当是否正确=否时显示" }
+        ]
+      },
+      { dataIndex: "screenshot", title: "修改后的图片", valueType: "screenshot", visibleRule: "0-0-0", subFields: [] },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea", visibleRule: "0-0-0", subFields: [] }
+    ],
+    models: ["response"]
+  },
+  "config_搜索偏好": {
+    name: "搜索偏好0429",
+    file: "config_搜索偏好.json",
+    fields: [
+      { dataIndex: "unable_to_judge", title: "无法判断", valueType: "depend", visibleRule: "2-0-0",
+        subFields: [
+          { title: "无法判断", valueType: "radio", options: [{label:"是",value:1},{label:"否",value:0}] },
+          { title: "理由", valueType: "textarea", dependency: "当无法判断=是时显示" }
+        ]
+      },
+      { dataIndex: "ranking", title: "排序", valueType: "responses_ranking", visibleRule: "2-0-0", subFields: [] },
+      { dataIndex: "Note", title: "笔记", valueType: "textarea_auto_height", visibleRule: "0-0-0", subFields: [] },
+      { dataIndex: "rubric1", title: "rubric分析（回复1）", valueType: "textarea_auto_height", visibleRule: "1-0-0", subFields: [] },
+      { dataIndex: "rubric2", title: "rubric分析（回复2）", valueType: "textarea_auto_height", visibleRule: "2-0-0", subFields: [] },
+      { dataIndex: "rubric3", title: "rubric分析（回复3）", valueType: "textarea_auto_height", visibleRule: "2-0-0", subFields: [] }
+    ],
+    models: ["response1", "response2", "response3"]
+  }
+};
+
+// ========== STATE ==========
+let currentConfig = "config_numcount";
+let selectedField = 0;
+// key = "fieldIdx" for top-level, "fieldIdx.subIdx" for sub-fields
+let selectedAnalysisFields = new Set();
+let selectedModels = new Set();
+let chartInstances = [];
+
+// ========== HELPERS ==========
+const TYPE_ICONS = {
+  radio: '🔘', checkbox: '☑️', textarea: '📝', textarea_auto_height: '📝',
+  depend: '🔗', form_list: '📋', text_label: '🏷️', text: '📝',
+  screenshot: '📎', editable_link: '🔗', responses_ranking: '📊',
+  draggable_md_editor: '📝', tag: '🏷️'
+};
+const TYPE_CLASS = (vt) => {
+  if (['radio','checkbox'].includes(vt)) return 'radio';
+  if (vt.startsWith('textarea') || vt === 'text' || vt === 'draggable_md_editor') return 'textarea';
+  if (vt === 'depend') return 'depend';
+  if (vt === 'form_list') return 'form_list';
+  if (vt === 'text_label' || vt === 'tag') return 'text_label';
+  return 'other';
+};
+const TYPE_LABEL = {
+  radio: '单选', checkbox: '多选', textarea: '文本框', textarea_auto_height: '文本框',
+  depend: '组合控件', form_list: '表单列表', text_label: '文本标注', text: '文本',
+  screenshot: '截图上传', editable_link: '可编辑链接', responses_ranking: '排序控件',
+  draggable_md_editor: 'MD编辑器', tag: '标签'
+};
+const VR_LABEL = { '1-0-0': '仅第一个Model显示', '2-0-0': '仅最后一个Model显示', '0-0-0': '所有Model都显示' };
+
+// Get analysis group for a single field/sub-field
+function getAnalysisGroup(field) {
+  const vt = field.valueType;
+  if (['radio','checkbox'].includes(vt)) return 'distributable';
+  if (vt.startsWith('textarea') || vt === 'text' || vt === 'draggable_md_editor') return 'text';
+  if (vt === 'text_label') return 'annotation';
+  return 'other';
+}
+
+// Flatten fields: expand depend/form_list into individual sub-fields for analysis
+function flattenFieldsForAnalysis(fields) {
+  const result = [];
+  fields.forEach((f, i) => {
+    if ((f.valueType === 'depend' || f.valueType === 'form_list') && f.subFields && f.subFields.length > 0) {
+      // Expand sub-fields, each becomes independently selectable
+      f.subFields.forEach((sf, si) => {
+        result.push({
+          ...sf,
+          key: `${i}.${si}`,
+          parentTitle: f.title,
+          parentType: f.valueType,
+          parentIdx: i,
+          subIdx: si,
+          visibleRule: f.visibleRule
+        });
+      });
+    } else {
+      // Top-level field, not a container
+      result.push({
+        ...f,
+        key: `${i}`,
+        parentTitle: null,
+        parentType: null,
+        parentIdx: i,
+        subIdx: -1
+      });
+    }
+  });
+  return result;
+}
+
+// ========== RENDER ==========
+function initConfigSelector() {
+  const sel = document.getElementById('configSelect');
+  sel.innerHTML = '';
+  for (const [key, cfg] of Object.entries(ALL_CONFIGS)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = `${cfg.name} (${cfg.file})`;
+    sel.appendChild(opt);
+  }
+  sel.value = currentConfig;
+}
+
+function switchConfig(key) {
+  currentConfig = key;
+  selectedField = 0;
+  selectedAnalysisFields.clear();
+  document.getElementById('resultsSection').style.display = 'none';
+  const cfg = ALL_CONFIGS[key];
+  document.getElementById('configFileInfo').textContent = `✓ ${cfg.file} 已加载`;
+  renderConfigPreview();
+  renderAnalysisConfig();
+}
+
+function renderConfigPreview() {
+  const cfg = ALL_CONFIGS[currentConfig];
+  document.getElementById('projName').textContent = cfg.name;
+  document.getElementById('fieldCountInfo').textContent = `${cfg.fields.length} 个字段 · ${cfg.models.length} 个 Model`;
+
+  const list = document.getElementById('fieldList');
+  list.innerHTML = '';
+  cfg.fields.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = `field-item-left${i === selectedField ? ' active' : ''}`;
+    div.onclick = () => { selectedField = i; renderConfigPreview(); renderFieldDetail(); };
+    div.innerHTML = `
+      <span class="f-icon">${TYPE_ICONS[f.valueType] || '📄'}</span>
+      <div class="f-info">
+        <div class="f-name">${f.title}</div>
+        <div class="f-type"><span class="type-tag ${TYPE_CLASS(f.valueType)}">${TYPE_LABEL[f.valueType] || f.valueType}</span></div>
+      </div>`;
+    list.appendChild(div);
+  });
+  renderFieldDetail();
+}
+
+function renderFieldDetail() {
+  const cfg = ALL_CONFIGS[currentConfig];
+  const f = cfg.fields[selectedField];
+  if (!f) return;
+  const detail = document.getElementById('fieldDetail');
+
+  let html = `<div class="detail-title">${f.title}</div>
+    <div class="detail-type">
+      <span class="type-tag ${TYPE_CLASS(f.valueType)}">${TYPE_LABEL[f.valueType] || f.valueType}</span>
+      <span style="color:var(--text-secondary)">dataIndex: ${f.dataIndex}</span>
+    </div>`;
+
+  // Options
+  if (f.options && f.options.length > 0) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">选项 (${f.options.length}个)</div>
+      <div class="option-list">${f.options.map(o => `<div class="option-chip"><span class="val">${o.value}=</span>${o.label}</div>`).join('')}</div>
+    </div>`;
+  }
+
+  // Sub fields
+  if (f.subFields && f.subFields.length > 0) {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">子字段 (${f.subFields.length}个)</div>
+      <div class="sub-field-tree">`;
+    f.subFields.forEach((sf, i) => {
+      const isLast = i === f.subFields.length - 1;
+      html += `<div class="sub-field-node">
+        <span class="tree-line">${isLast ? '└─' : '├─'}</span>
+        <div class="sub-field-info">
+          <div class="sub-field-name">${sf.title} <span class="type-tag ${TYPE_CLASS(sf.valueType)}" style="margin-left:6px;">${TYPE_LABEL[sf.valueType] || sf.valueType}</span></div>`;
+      if (sf.options && sf.options.length > 0) {
+        html += `<div class="sub-field-opts">选项: ${sf.options.map(o => `${o.value}=${o.label}`).join(', ')}</div>`;
+      }
+      if (sf.dependency) {
+        html += `<div class="dep-badge">⚡ ${sf.dependency}</div>`;
+      }
+      html += `</div></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Visible rule
+  if (f.visibleRule) {
+    html += `<div class="visible-rule-badge">👁️ visibleRule: ${f.visibleRule} — ${VR_LABEL[f.visibleRule] || f.visibleRule}</div>`;
+  }
+
+  detail.innerHTML = html;
+}
+
+function renderAnalysisConfig() {
+  const cfg = ALL_CONFIGS[currentConfig];
+
+  // Models
+  const modelRow = document.getElementById('modelRow');
+  selectedModels = new Set(cfg.models);
+  let mhtml = `<div class="field-card selected" onclick="toggleAllModels()">
+    <span class="fc-check">✓</span><span class="fc-name">全选</span></div>`;
+  cfg.models.forEach(m => {
+    mhtml += `<div class="field-card selected" data-model="${m}" onclick="toggleModel('${m}')">
+      <span class="fc-check">✓</span><span class="fc-name">${m}</span></div>`;
+  });
+  modelRow.innerHTML = mhtml;
+
+  // Flatten fields (expand depend/form_list sub-fields)
+  const flatFields = flattenFieldsForAnalysis(cfg.fields);
+
+  // Group by analysis type
+  const groups = { distributable: [], text: [], annotation: [], other: [] };
+  flatFields.forEach(f => {
+    const g = getAnalysisGroup(f);
+    groups[g].push(f);
+  });
+
+  const groupMeta = {
+    distributable: { icon: '📊', label: '可统计分布的字段', color: 'var(--accent-light)' },
+    text: { icon: '📝', label: '文本类字段', color: 'var(--green)' },
+    annotation: { icon: '🏷️', label: '标注类字段', color: 'var(--cyan)' },
+    other: { icon: '📋', label: '列表 / 其他字段', color: 'var(--orange)' }
+  };
+
+  let ghtml = '';
+  for (const [gkey, items] of Object.entries(groups)) {
+    if (items.length === 0) continue;
+    const meta = groupMeta[gkey];
+    ghtml += `<div class="group-section">
+      <div class="group-title"><span class="g-icon">${meta.icon}</span> ${meta.label} <span class="g-count">(${items.length})</span></div>
+      <div class="field-cards">`;
+    items.forEach(f => {
+      const sel = selectedAnalysisFields.has(f.key);
+      let metaText = TYPE_LABEL[f.valueType] || f.valueType;
+      if (f.options && f.options.length > 0) metaText += ` · ${f.options.length}选项`;
+      // Show parent name for sub-fields
+      let nameDisplay = f.title;
+      if (f.parentTitle) {
+        nameDisplay = `<span style="color:var(--text-secondary);font-size:11px;">${f.parentTitle} ›</span> ${f.title}`;
+      }
+      ghtml += `<div class="field-card${sel ? ' selected' : ''}" onclick="toggleAnalysisField('${f.key}')">
+        <span class="fc-check">${sel ? '✓' : ''}</span>
+        <span class="fc-name">${nameDisplay}</span>
+        <span class="fc-meta">${metaText}</span></div>`;
+    });
+    ghtml += `</div></div>`;
+  }
+  document.getElementById('analysisGroups').innerHTML = ghtml;
+  updateSelCount();
+}
+
+function toggleAnalysisField(key) {
+  if (selectedAnalysisFields.has(key)) selectedAnalysisFields.delete(key);
+  else selectedAnalysisFields.add(key);
+  renderAnalysisConfig();
+}
+
+function toggleModel(m) {
+  if (selectedModels.has(m)) selectedModels.delete(m);
+  else selectedModels.add(m);
+  renderModelUI();
+}
+
+function toggleAllModels() {
+  const cfg = ALL_CONFIGS[currentConfig];
+  if (selectedModels.size === cfg.models.length) selectedModels.clear();
+  else selectedModels = new Set(cfg.models);
+  renderModelUI();
+}
+
+function renderModelUI() {
+  const cfg = ALL_CONFIGS[currentConfig];
+  document.querySelectorAll('.model-row .field-card').forEach(el => {
+    const m = el.dataset.model;
+    if (m) {
+      el.classList.toggle('selected', selectedModels.has(m));
+      el.querySelector('.fc-check').textContent = selectedModels.has(m) ? '✓' : '';
+    } else {
+      const allSel = selectedModels.size === cfg.models.length;
+      el.classList.toggle('selected', allSel);
+      el.querySelector('.fc-check').textContent = allSel ? '✓' : '';
+    }
+  });
+}
+
+function updateSelCount() {
+  const cfg = ALL_CONFIGS[currentConfig];
+  const totalFlat = flattenFieldsForAnalysis(cfg.fields).length;
+  document.getElementById('selCount').textContent = `已选 ${selectedAnalysisFields.size} / ${totalFlat} 个字段`;
+}
+
+// ========== SIMULATED RESULTS ==========
+function showResults() {
+  if (selectedAnalysisFields.size === 0) { alert('请至少选择一个分析字段'); return; }
+
+  chartInstances.forEach(c => c.dispose());
+  chartInstances = [];
+
+  const cfg = ALL_CONFIGS[currentConfig];
+  const flatFields = flattenFieldsForAnalysis(cfg.fields);
+  const container = document.getElementById('resultsContainer');
+  container.innerHTML = '';
+  document.getElementById('resultsSection').style.display = '';
+
+  let chartIdx = 0;
+  // Collect selected flat fields in order
+  const selectedFlat = flatFields.filter(f => selectedAnalysisFields.has(f.key));
+
+  selectedFlat.forEach(f => {
+    const group = getAnalysisGroup(f);
+
+    if (group === 'distributable') {
+      container.innerHTML += renderDistributableResult(f, chartIdx);
+      chartIdx++;
+    } else if (group === 'text') {
+      container.innerHTML += renderTextResult(f);
+    } else if (group === 'annotation') {
+      container.innerHTML += renderAnnotationResult(f, chartIdx);
+      chartIdx++;
+    } else {
+      container.innerHTML += renderOtherResult(f);
+    }
+  });
+
+  // Initialize charts after DOM
+  setTimeout(() => {
+    chartIdx = 0;
+    selectedFlat.forEach(f => {
+      const group = getAnalysisGroup(f);
+      if (group === 'distributable') { initDistributableCharts(f, chartIdx); chartIdx++; }
+      else if (group === 'annotation') { initAnnotationCharts(f, chartIdx); chartIdx++; }
+    });
+  }, 100);
+}
+
+function renderDistributableResult(f, ci) {
+  // For sub-fields, use their own options; for top-level, use field options
+  let opts = f.options || [];
+  if (opts.length === 0) opts = [{label:'选项A',value:0},{label:'选项B',value:1}];
+
+  // Title: show parent > sub-field hierarchy
+  const titleDisplay = f.parentTitle ? `${f.parentTitle} › ${f.title}` : f.title;
+  const typeDisplay = f.parentType ? `${TYPE_LABEL[f.parentType]} › ${TYPE_LABEL[f.valueType]}` : (TYPE_LABEL[f.valueType] || f.valueType);
+
+  // Simulate data
+  const total = 18432;
+  const colors = ['var(--green)','var(--red)','var(--orange)','var(--purple)','var(--blue)','var(--cyan)'];
+  const simData = opts.map((o, i) => {
+    const pct = i === 0 ? (55 + Math.random()*20) : (5 + Math.random()*15);
+    return { label: o.label, value: o.value, count: Math.round(total * pct / 100), pct: pct.toFixed(1), color: colors[i % colors.length] };
+  });
+  const sumCount = simData.reduce((a,b) => a + b.count, 0);
+  simData.forEach(d => { d.pct = (d.count / sumCount * 100).toFixed(1); });
+
+  const modelTags = [...selectedModels].map(m => `<span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green);">${m}</span>`).join('');
+
+  let statsHtml = simData.map(d => `
+    <div class="stat-box">
+      <div class="stat-value" style="color:${d.color};">${d.pct}%</div>
+      <div class="stat-label">${d.label}</div>
+      <div class="stat-count">${d.count.toLocaleString()} 条</div>
+    </div>`).join('');
+
+  return `<div class="result-card">
+    <div class="result-card-header">
+      <h3>${titleDisplay}</h3>
+      <span class="tag" style="background:rgba(108,92,231,0.15);color:var(--accent-light);">${typeDisplay}</span>
+      ${modelTags}
+    </div>
+    <div class="result-card-body">
+      <div class="stats-grid">${statsHtml}
+        <div class="stat-box"><div class="stat-value" style="color:var(--text);">${sumCount.toLocaleString()}</div><div class="stat-label">总标注数</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-box" id="pie_${ci}"></div>
+        <div class="chart-box" id="bar_${ci}"></div>
+      </div>
+      <div class="file-compare-title">📁 按文件对比</div>
+      <table class="detail-table"><thead><tr><th>文件</th><th>总条数</th>${opts.map(o => `<th>${o.label}</th>`).join('')}<th>问题率</th></tr></thead>
+      <tbody>
+        <tr><td>batch_2026_5.6-5.9.jsonl</td><td>7,218</td>${opts.map((o,i) => {
+          const v = Math.round(7218 * parseFloat(simData[i].pct) / 100);
+          return `<td>${v.toLocaleString()} (${simData[i].pct}%)</td>`;
+        }).join('')}<td><span style="color:var(--red);">${(100 - parseFloat(simData[0].pct)).toFixed(1)}%</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${100-parseFloat(simData[0].pct)}%;background:var(--red);"></div></div></td></tr>
+        <tr><td>batch_2026_4.21-4.30.jsonl</td><td>11,214</td>${opts.map((o,i) => {
+          const pct2 = (parseFloat(simData[i].pct) + (Math.random()-0.5)*4).toFixed(1);
+          const v = Math.round(11214 * pct2 / 100);
+          return `<td>${v.toLocaleString()} (${pct2}%)</td>`;
+        }).join('')}<td><span style="color:var(--red);">${(100 - parseFloat(simData[0].pct) + (Math.random()-0.5)*3).toFixed(1)}%</span>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${100-parseFloat(simData[0].pct)}%;background:var(--red);"></div></div></td></tr>
+      </tbody></table>
+    </div></div>`;
+}
+
+function initDistributableCharts(f, ci) {
+  let opts = f.options || [];
+  if (opts.length === 0) opts = [{label:'选项A',value:0},{label:'选项B',value:1}];
+
+  const titleDisplay = f.parentTitle ? `${f.parentTitle} › ${f.title}` : f.title;
+  const echartColors = ['#00b894','#e17055','#fdcb6e','#a29bfe','#74b9ff','#00cec9'];
+  const simValues = opts.map((o, i) => {
+    const base = i === 0 ? 12000 : 1500 + Math.round(Math.random()*3000);
+    return { value: base, name: `${o.value}-${o.label}`, itemStyle: { color: echartColors[i % echartColors.length] } };
+  });
+
+  const pieEl = document.getElementById(`pie_${ci}`);
+  if (pieEl) {
+    const pie = echarts.init(pieEl, 'dark');
+    pie.setOption({
+      backgroundColor: 'transparent',
+      title: { text: '分布饼图', left: 'center', textStyle: { fontSize: 13, fontWeight: 500, color: '#8b8fa3' } },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} 条 ({d}%)' },
+      series: [{ type: 'pie', radius: ['38%', '68%'], center: ['50%', '55%'], avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 5, borderColor: '#1a1d27', borderWidth: 2 },
+        label: { color: '#e4e6ed', fontSize: 11 }, data: simValues }]
+    });
+    chartInstances.push(pie);
+  }
+
+  const barEl = document.getElementById(`bar_${ci}`);
+  if (barEl) {
+    const bar = echarts.init(barEl, 'dark');
+    bar.setOption({
+      backgroundColor: 'transparent',
+      title: { text: '各选项计数', left: 'center', textStyle: { fontSize: 13, fontWeight: 500, color: '#8b8fa3' } },
+      tooltip: { trigger: 'axis' },
+      grid: { left: 55, right: 25, top: 45, bottom: 35 },
+      xAxis: { type: 'category', data: opts.map(o => o.label), axisLabel: { color: '#8b8fa3', fontSize: 11, rotate: opts.length > 4 ? 20 : 0 }, axisLine: { lineStyle: { color: '#2a2e3d' } } },
+      yAxis: { type: 'value', axisLabel: { color: '#8b8fa3' }, splitLine: { lineStyle: { color: '#2a2e3d' } } },
+      series: [{ type: 'bar', barWidth: Math.min(45, 180/opts.length), itemStyle: { borderRadius: [5,5,0,0] }, data: simValues,
+        label: { show: true, position: 'top', color: '#e4e6ed', fontSize: 12, fontWeight: 600, formatter: '{c}' } }]
+    });
+    chartInstances.push(bar);
+  }
+}
+
+function renderTextResult(f) {
+  const total = 18432;
+  const nonEmpty = Math.round(total * (0.15 + Math.random()*0.3));
+  const nonEmptyRate = (nonEmpty/total*100).toFixed(1);
+  const avgLen = Math.round(20 + Math.random()*80);
+  const maxLen = Math.round(avgLen * 3 + Math.random()*200);
+  const titleDisplay = f.parentTitle ? `${f.parentTitle} › ${f.title}` : f.title;
+  const typeDisplay = f.parentType ? `${TYPE_LABEL[f.parentType]} › ${TYPE_LABEL[f.valueType]}` : (TYPE_LABEL[f.valueType] || f.valueType);
+
+  return `<div class="result-card">
+    <div class="result-card-header">
+      <h3>${titleDisplay}</h3>
+      <span class="tag" style="background:rgba(0,184,148,0.15);color:var(--green);">${typeDisplay}</span>
+    </div>
+    <div class="result-card-body">
+      <div class="text-stats-row">
+        <div class="text-stat-card">
+          <div class="ts-label">非空率</div>
+          <div class="ts-value" style="color:var(--blue);">${nonEmptyRate}%</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${nonEmpty.toLocaleString()} / ${total.toLocaleString()}</div>
+        </div>
+        <div class="text-stat-card">
+          <div class="ts-label">平均字数</div>
+          <div class="ts-value" style="color:var(--green);">${avgLen}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">非空记录</div>
+        </div>
+        <div class="text-stat-card">
+          <div class="ts-label">最大字数</div>
+          <div class="ts-value" style="color:var(--orange);">${maxLen}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">单条最长</div>
+        </div>
+      </div>
+    </div></div>`;
+}
+
+function renderAnnotationResult(f, ci) {
+  const tags = f.subFields?.filter(s => s.valueType === 'tag') || [];
+  const tagNames = tags.length > 0 ? tags.map(t => t.title) : ['标签A','标签B'];
+
+  return `<div class="result-card">
+    <div class="result-card-header">
+      <h3>${f.title}</h3>
+      <span class="tag" style="background:rgba(0,206,201,0.15);color:var(--cyan);">文本标注</span>
+    </div>
+    <div class="result-card-body">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value" style="color:var(--text);">18,432</div><div class="stat-label">总记录数</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--blue);">4,521</div><div class="stat-label">有标注记录</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--green);">24.5%</div><div class="stat-label">标注覆盖率</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--orange);">7,892</div><div class="stat-label">总标注数</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-box" id="pie_${ci}"></div>
+        <div class="chart-box" id="bar_${ci}"></div>
+      </div>
+    </div></div>`;
+}
+
+function initAnnotationCharts(f, ci) {
+  const tags = f.subFields?.filter(s => s.valueType === 'tag') || [];
+  const tagNames = tags.length > 0 ? tags.map(t => t.title) : ['标签A','标签B'];
+  const echartColors = ['#74b9ff','#e17055','#fdcb6e','#a29bfe','#00cec9'];
+  const simData = tagNames.map((t, i) => ({
+    value: 2000 + Math.round(Math.random()*5000), name: t,
+    itemStyle: { color: echartColors[i % echartColors.length] }
+  }));
+
+  const pieEl = document.getElementById(`pie_${ci}`);
+  if (pieEl) {
+    const pie = echarts.init(pieEl, 'dark');
+    pie.setOption({
+      backgroundColor: 'transparent',
+      title: { text: '子标签分布', left: 'center', textStyle: { fontSize: 13, fontWeight: 500, color: '#8b8fa3' } },
+      tooltip: { trigger: 'item', formatter: '{b}: {c} 次 ({d}%)' },
+      series: [{ type: 'pie', radius: ['38%', '68%'], center: ['50%', '55%'],
+        itemStyle: { borderRadius: 5, borderColor: '#1a1d27', borderWidth: 2 },
+        label: { color: '#e4e6ed', fontSize: 11 }, data: simData }]
+    });
+    chartInstances.push(pie);
+  }
+  const barEl = document.getElementById(`bar_${ci}`);
+  if (barEl) {
+    const bar = echarts.init(barEl, 'dark');
+    bar.setOption({
+      backgroundColor: 'transparent',
+      title: { text: '标签出现次数', left: 'center', textStyle: { fontSize: 13, fontWeight: 500, color: '#8b8fa3' } },
+      tooltip: { trigger: 'axis' },
+      grid: { left: 55, right: 25, top: 45, bottom: 35 },
+      xAxis: { type: 'category', data: tagNames, axisLabel: { color: '#8b8fa3', fontSize: 11 }, axisLine: { lineStyle: { color: '#2a2e3d' } } },
+      yAxis: { type: 'value', axisLabel: { color: '#8b8fa3' }, splitLine: { lineStyle: { color: '#2a2e3d' } } },
+      series: [{ type: 'bar', barWidth: 40, itemStyle: { borderRadius: [5,5,0,0] }, data: simData,
+        label: { show: true, position: 'top', color: '#e4e6ed', fontSize: 12, fontWeight: 600 } }]
+    });
+    chartInstances.push(bar);
+  }
+}
+
+function renderOtherResult(f) {
+  const titleDisplay = f.parentTitle ? `${f.parentTitle} › ${f.title}` : f.title;
+  let extra = '';
+  if (f.valueType === 'form_list') {
+    extra = `<div style="margin-top:12px;"><div class="file-compare-title">📋 列表条目统计</div>
+      <div class="text-stats-row">
+        <div class="text-stat-card"><div class="ts-label">平均条目数</div><div class="ts-value" style="color:var(--orange);">3.2</div></div>
+        <div class="text-stat-card"><div class="ts-label">最大条目数</div><div class="ts-value" style="color:var(--red);">12</div></div>
+        <div class="text-stat-card"><div class="ts-label">非空率</div><div class="ts-value" style="color:var(--green);">92.1%</div></div>
+      </div></div>`;
+  } else if (f.valueType === 'responses_ranking') {
+    extra = `<div style="margin-top:12px;"><div class="file-compare-title">📊 排序分布</div>
+      <div class="text-stats-row">
+        <div class="text-stat-card"><div class="ts-label">最常排第1</div><div class="ts-value" style="color:var(--green);">response2</div></div>
+        <div class="text-stat-card"><div class="ts-label">最常排末位</div><div class="ts-value" style="color:var(--red);">response3</div></div>
+        <div class="text-stat-card"><div class="ts-label">已排序率</div><div class="ts-value" style="color:var(--blue);">97.8%</div></div>
+      </div></div>`;
+  } else if (f.valueType === 'screenshot') {
+    extra = `<div style="margin-top:12px;"><div class="text-stats-row">
+      <div class="text-stat-card"><div class="ts-label">已上传截图</div><div class="ts-value" style="color:var(--blue);">8,724</div></div>
+      <div class="text-stat-card"><div class="ts-label">上传率</div><div class="ts-value" style="color:var(--green);">47.3%</div></div>
+      <div class="text-stat-card"><div class="ts-label">平均截图数</div><div class="ts-value" style="color:var(--orange);">1.2</div></div>
+    </div></div>`;
+  }
+  return `<div class="result-card">
+    <div class="result-card-header">
+      <h3>${titleDisplay}</h3>
+      <span class="tag" style="background:rgba(253,203,110,0.15);color:var(--orange);">${TYPE_LABEL[f.valueType] || f.valueType}</span>
+    </div>
+    <div class="result-card-body">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-value" style="color:var(--text);">18,432</div><div class="stat-label">总记录数</div></div>
+        <div class="stat-box"><div class="stat-value" style="color:var(--green);">89.4%</div><div class="stat-label">非空率</div></div>
+      </div>
+      ${extra}
+    </div></div>`;
+}
+
+// ========== INIT ==========
+window.addEventListener('resize', () => chartInstances.forEach(c => c.resize()));
+initConfigSelector();
+switchConfig(currentConfig);
+// Auto-select first two distributable fields to show the sub-field expansion effect
+const cfg0 = ALL_CONFIGS[currentConfig];
+const flat0 = flattenFieldsForAnalysis(cfg0.fields);
+let autoCount = 0;
+flat0.forEach(f => { if (getAnalysisGroup(f) === 'distributable' && autoCount < 3) { selectedAnalysisFields.add(f.key); autoCount++; } });
+renderAnalysisConfig();
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "id": "01KRMS0PZQAH3ZM3JRWX565DR4",
+  "name": "rubic修改前后偏好0515",
+  "config_data": [
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "rank",
+      "fieldProps": {
+        "options": [
+          {
+            "label": "回复1更好",
+            "value": 1
+          },
+          {
+            "label": "回复2更好",
+            "value": 2
+          },
+          {
+            "label": "tie",
+            "value": 3
+          }
+        ],
+        "showSearch": true
+      },
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "排序",
+      "valueType": "radio"
+    },
+    {
+      "columns": [
+        {
+          "columns": [
+            {
+              "dataIndex": "visibleRule",
+              "title": "显示规则",
+              "tooltip": "2-0-0"
+            }
+          ]
+        }
+      ],
+      "dataIndex": "note",
+      "formItemProps": {
+        "rules": [
+          {
+            "required": true
+          }
+        ]
+      },
+      "title": "原因",
+      "valueType": "textarea_auto_height"
+    }
+  ]
+}
